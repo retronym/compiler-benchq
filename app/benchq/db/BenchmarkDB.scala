@@ -1,5 +1,3 @@
 package benchq.db
 
-class BenchmarkDB {
-
-}
+class BenchmarkDB {}

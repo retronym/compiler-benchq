@@ -1,5 +1,3 @@
 package benchq.bench
 
-class BenchmarkRunner {
-
-}
+class BenchmarkRunner {}

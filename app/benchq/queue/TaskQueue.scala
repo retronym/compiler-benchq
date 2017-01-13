@@ -1,6 +1,3 @@
 package benchq.queue
 
-class TaskQueue {
-
-}
-
+class TaskQueue {}
