@@ -1,8 +1,11 @@
-package controllers
+package benchq
+
+import java.io.File
 
 import org.scalatestplus.play._
-import play.api.test._
+import play.api._
 import play.api.test.Helpers._
+import play.api.test._
 
 /**
  * Add your spec here.
@@ -10,7 +13,15 @@ import play.api.test.Helpers._
  *
  * For more information, see https://www.playframework.com/documentation/latest/ScalaTestingWithScalaTest
  */
-class HomeControllerSpec extends PlaySpec with OneAppPerTest {
+class HomeControllerSpec extends PlaySpec {
+  implicit lazy val app: Application = {
+    // as seen in http://mariussoutier.com/blog/2015/12/06/playframework-2-4-dependency-injection-di/
+    val appLoader = new AppApplicationLoader
+    val context = ApplicationLoader.createContext(
+      new Environment(new File("."), ApplicationLoader.getClass.getClassLoader, Mode.Test)
+    )
+    appLoader.load(context)
+  }
 
   "HomeController GET" should {
 
