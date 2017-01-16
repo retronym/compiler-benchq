@@ -7,9 +7,10 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 scalaVersion := "2.11.8"
 
-libraryDependencies += filters
-libraryDependencies += jdbc
 libraryDependencies ++= List(
+  filters,
+  jdbc,
+  "com.typesafe.play"        %% "anorm"              % "2.5.0",
   "org.influxdb"             %  "influxdb-java"      % "2.5",
   "com.softwaremill.macwire" %% "macros"             % "2.2.5" % "provided",
   "org.scalatestplus.play"   %% "scalatestplus-play" % "1.5.1" % Test)
