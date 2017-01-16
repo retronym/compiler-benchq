@@ -1,11 +1,13 @@
 package benchq
 
 import benchq.git.GitRepo
+import benchq.influxdb.ResultsDb
 import benchq.queue.TaskQueue
 import com.softwaremill.macwire._
 import controllers.Assets
 import play.api.ApplicationLoader.Context
 import play.api._
+import play.api.db.{DBComponents, Database, HikariCPComponents}
 import play.api.routing.Router
 import router.Routes
 
@@ -20,17 +22,23 @@ class AppApplicationLoader extends ApplicationLoader {
   }
 }
 
-class MyComponents(context: Context) extends BuiltInComponentsFromContext(context) {
+class MyComponents(context: Context)
+    extends BuiltInComponentsFromContext(context)
+    with DBComponents
+    with HikariCPComponents {
   lazy val assets: Assets = wire[Assets]
   lazy val router: Router = {
     lazy val prefix = "/"
     wire[Routes]
   }
+  lazy val database: Database = dbApi.database("default")
 
-  lazy val homeController: HomeController = wire[HomeController]
+  lazy val toolDb: ToolDb = wire[ToolDb]
+  lazy val resultsDb: ResultsDb = wire[ResultsDb]
 
   lazy val queue: TaskQueue = wire[TaskQueue]
-  lazy val db: DB = wire[DB]
   lazy val gitRepo: GitRepo = wire[GitRepo]
   lazy val webhooks: Webhooks = wire[Webhooks]
+
+  lazy val homeController: HomeController = wire[HomeController]
 }

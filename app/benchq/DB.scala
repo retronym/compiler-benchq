@@ -1,3 +1,0 @@
-package benchq
-
-class DB {}
