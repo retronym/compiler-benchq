@@ -18,11 +18,11 @@ class AppApplicationLoader extends ApplicationLoader {
       _.configure(context.environment)
     }
 
-    new MyComponents(context).application
+    new BenchQComponents(context).application
   }
 }
 
-class MyComponents(context: Context)
+class BenchQComponents(context: Context)
     extends BuiltInComponentsFromContext(context)
     with DBComponents
     with HikariCPComponents {

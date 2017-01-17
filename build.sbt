@@ -15,8 +15,19 @@ libraryDependencies ++= List(
   "com.softwaremill.macwire" %% "macros"             % "2.2.5" % "provided",
   "org.scalatestplus.play"   %% "scalatestplus-play" % "1.5.1" % Test)
 
+// access to components in console, interface with DBs
+initialCommands in Compile in console :=
+  """import play.api._, benchq._
+    |val components = {
+    |  val env = Environment.simple()
+    |  val context = ApplicationLoader.createContext(env)
+    |  new BenchQComponents(context)
+    |}
+    |import components._
+  """.stripMargin
+
 // Adds additional packages into Twirl
-//TwirlKeys.templateImports += "org.scala-lang.controllers._"
+// TwirlKeys.templateImports += "org.scala-lang.controllers._"
 
 // Adds additional packages into conf/routes
 // play.sbt.routes.RoutesKeys.routesImport += "org.scala-lang.binders._"
