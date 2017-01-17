@@ -1,4 +1,6 @@
 logs
 target
 /.idea
+/sandbox
 /RUNNING_PID
+/conf/application.conf
