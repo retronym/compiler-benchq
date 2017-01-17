@@ -33,9 +33,8 @@ class ResultsDb(config: Configuration) {
 
   def withConnection[T](body: InfluxDB => T): T = {
     val conn = connect()
-    val r = body(conn)
-    conn.close()
-    r
+    try body(conn)
+    finally conn.close()
   }
 
   def connect(): InfluxDB = {
