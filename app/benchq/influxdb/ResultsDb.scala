@@ -3,31 +3,56 @@ package influxdb
 
 import okhttp3.Interceptor.Chain
 import okhttp3._
+import org.influxdb.dto.Query
+import org.influxdb.dto.QueryResult.Series
 import org.influxdb.{InfluxDB, InfluxDBFactory}
 import play.api.Configuration
+
+import scala.collection.convert.decorateAsScala._
 
 class ResultsDb(config: Configuration) {
   private def configString(path: String): String =
     config.getString(path).getOrElse(throw config.globalError(s"Missing config: $path"))
 
-  private val influxUrl = configString("influx.user")
+  private def trimSl(s: String) = s.replaceFirst("^/*", "").replaceFirst("/*$", "")
+
+  private val influxBaseUrl = trimSl(configString("influx.baseUrl"))
+  private val influxUrlPath = "/" + trimSl(configString("influx.urlPath"))
+  private val influxUrl = influxBaseUrl + influxUrlPath + "/"
+
   private val influxUser = configString("influx.user")
   private val influxPassword = configString("influx.password")
+  private val influxDbName = "scala_benchmark"
+
+  // utilities for console interaction: `sbt console`, `scala> resultsDb.createDb()`
+
+  def query(s: String): List[Series] = withConnection { conn =>
+    val r = conn.query(new Query(s, influxDbName))
+    r.getResults.asScala.flatMap(_.getSeries.asScala).toList
+  }
+
+  def withConnection[T](body: InfluxDB => T): T = {
+    val conn = connect()
+    val r = body(conn)
+    conn.close()
+    r
+  }
 
   def connect(): InfluxDB = {
     val client = new OkHttpClient.Builder()
 
-    client.addNetworkInterceptor(new Interceptor {
-      override def intercept(chain: Chain): Response = {
-        val fixedUrl = chain
-          .request()
-          .url()
-          .newBuilder()
-          .encodedPath(
-            "/influx/" + chain.request().url().encodedPath().replaceFirst("/influxdb", ""))
-        chain.proceed(chain.request().newBuilder().url(fixedUrl.build()).build())
-      }
-    })
+    // work around https://github.com/influxdata/influxdb-java/issues/268
+    if (!influxUrlPath.isEmpty)
+      client.addNetworkInterceptor(new Interceptor {
+        override def intercept(chain: Chain): Response = {
+          val fixedUrl = chain
+            .request()
+            .url()
+            .newBuilder()
+            .encodedPath(influxUrlPath + chain.request().url().encodedPath())
+          chain.proceed(chain.request().newBuilder().url(fixedUrl.build()).build())
+        }
+      })
 
     client.authenticator(new Authenticator {
       override def authenticate(route: Route, response: Response): Request = {
