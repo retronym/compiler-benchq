@@ -2,11 +2,13 @@
 
 play.application.loader = benchq.AppApplicationLoader
 
-db.default.driver=org.h2.Driver
-db.default.url = "jdbc:h2:mem:play"
+db.default {
+  driver = "org.h2.Driver"
+  url = "jdbc:h2:./sandbox/db"
+}
 
-// influx.url = https://scala-ci.typesafe.com/influx
-// split up to simplify fix of https://github.com/influxdata/influxdb-java/issues/268
+# influx.url = https://scala-ci.typesafe.com/influx
+# split up to simplify fix of https://github.com/influxdata/influxdb-java/issues/268
 influx.baseUrl = "https://scala-ci.typesafe.com"
 influx.urlPath = "influx"
 influx.user = "scala"

@@ -2,11 +2,12 @@ package benchq
 
 import benchq.git.GitRepo
 import benchq.influxdb.ResultsDb
-import benchq.queue.TaskQueue
+import benchq.queue.{ScalaVersionService, TaskQueue}
 import com.softwaremill.macwire._
 import controllers.Assets
 import play.api.ApplicationLoader.Context
 import play.api._
+import play.api.db.evolutions.EvolutionsComponents
 import play.api.db.{DBComponents, Database, HikariCPComponents}
 import play.api.routing.Router
 import router.Routes
@@ -18,14 +19,17 @@ class AppApplicationLoader extends ApplicationLoader {
       _.configure(context.environment)
     }
 
-    new BenchQComponents(context).application
+    val components = new BenchQComponents(context)
+    components.applicationEvolutions // force the lazy val to ensure evolutions are applied
+    components.application
   }
 }
 
 class BenchQComponents(context: Context)
     extends BuiltInComponentsFromContext(context)
     with DBComponents
-    with HikariCPComponents {
+    with HikariCPComponents
+    with EvolutionsComponents {
   lazy val assets: Assets = wire[Assets]
   lazy val router: Router = {
     lazy val prefix = "/"
@@ -39,6 +43,8 @@ class BenchQComponents(context: Context)
   lazy val queue: TaskQueue = wire[TaskQueue]
   lazy val gitRepo: GitRepo = wire[GitRepo]
   lazy val webhooks: Webhooks = wire[Webhooks]
+
+  lazy val scalaVersionService: ScalaVersionService = wire[ScalaVersionService]
 
   lazy val homeController: HomeController = wire[HomeController]
 }
