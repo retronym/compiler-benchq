@@ -12,9 +12,10 @@ create table compilerOption(
     opt varchar(128)
 );
 
-create table scalaVersionCompilerOptions(
+create table scalaVersionCompilerOption(
     scalaVersionId bigint,
     compilerOptionId bigint,
+    idx int,
     foreign key (scalaVersionId) references scalaVersion (id) on delete cascade,
     foreign key (compilerOptionId) references compilerOption (id),
     primary key (scalaVersionId, compilerOptionId)
@@ -23,5 +24,5 @@ create table scalaVersionCompilerOptions(
 # --- !Downs
 
 drop table ScalaVersion;
-drop table compilerArg;
-drop table scalaVersionCompilerOptions;
+drop table compilerOption;
+drop table scalaVersionCompilerOption;
