@@ -1,7 +1,5 @@
 package benchq
 
-import java.io.File
-
 import org.scalatestplus.play._
 import play.api._
 import play.api.test.Helpers._

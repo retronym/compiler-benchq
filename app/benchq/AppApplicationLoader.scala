@@ -2,7 +2,7 @@ package benchq
 
 import benchq.git.GitRepo
 import benchq.influxdb.ResultsDb
-import benchq.queue.{ScalaVersionService, TaskQueue}
+import benchq.queue._
 import com.softwaremill.macwire._
 import controllers.Assets
 import play.api.ApplicationLoader.Context
@@ -45,6 +45,9 @@ class BenchQComponents(context: Context)
   lazy val webhooks: Webhooks = wire[Webhooks]
 
   lazy val scalaVersionService: ScalaVersionService = wire[ScalaVersionService]
+  lazy val benchmarkService: BenchmarkService = wire[BenchmarkService]
+  lazy val compilerBenchmarkTaskService: CompilerBenchmarkTaskService =
+    wire[CompilerBenchmarkTaskService]
 
   lazy val homeController: HomeController = wire[HomeController]
 }
