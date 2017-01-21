@@ -3,23 +3,23 @@ package controllers
 import javax.inject._
 
 import benchq.ToolDb
+import benchq.queue.CompilerBenchmarkTaskService
 import play.api.mvc._
+import views._
 
 /**
  * This controller creates an `Action` to handle HTTP requests to the
  * application's home page.
  */
 @Singleton
-class HomeController(toolDb: ToolDb) extends Controller {
+class HomeController(compilerBenchmarkTaskService: CompilerBenchmarkTaskService)
+    extends Controller {
 
-  /**
-   * Create an Action to render an HTML page.
-   *
-   * The configuration in the `routes` file means that this method
-   * will be called when the application receives a `GET` request with
-   * a path of `/`.
-   */
-  def index = Action { implicit request =>
-    Ok(views.html.index(toolDb.getOne))
+  val Home = Redirect(routes.HomeController.queue())
+
+  def index = Action(Home)
+
+  def queue() = Action { implicit request =>
+    Ok(html.queue(compilerBenchmarkTaskService.byPriority()))
   }
 }

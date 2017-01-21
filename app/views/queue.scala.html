@@ -1,0 +1,30 @@
+@(tasks: List[benchq.queue.CompilerBenchmarkTask])
+
+@main {
+    <h1>Benchmark Queue</h1>
+
+    @if(tasks.nonEmpty) {
+        <div id="queue">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Priority</th>
+                        <th>Next Action</th>
+                        <th>Scala Version</th>
+                        <th>Benchmarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @tasks.map { task =>
+                        <tr>
+                            <td>@task.priority</td>
+                            <td>@task.nextAction</td>
+                            <td>@task.scalaVersion</td>
+                            <td>@task.benchmarks</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}
