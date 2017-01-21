@@ -176,6 +176,8 @@ class CompilerBenchmarkTaskService(database: Database,
     }
   }
 
+  // TODO: provide a method to get a task by id, factor out a common query using #$filter,
+  // https://www.playframework.com/documentation/2.5.x/ScalaAnorm#SQL-queries-using-String-Interpolation
   def byPriority(nextActions: Set[Action] = Action.values.toSet): List[CompilerBenchmarkTask] =
     database.withConnection { implicit conn =>
       def benchmarks(taskId: Long): List[Benchmark] = {

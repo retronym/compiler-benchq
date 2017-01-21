@@ -1,5 +1,6 @@
 package benchq
 
+import controllers.HomeController
 import org.scalatestplus.play._
 import play.api._
 import play.api.test.Helpers._

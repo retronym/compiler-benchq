@@ -1,7 +1,8 @@
-package benchq
+package controllers
 
 import javax.inject._
 
+import benchq.ToolDb
 import play.api.mvc._
 
 /**

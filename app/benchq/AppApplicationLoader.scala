@@ -5,6 +5,7 @@ import benchq.influxdb.ResultsDb
 import benchq.queue._
 import com.softwaremill.macwire._
 import controllers.Assets
+import controllers.HomeController
 import play.api.ApplicationLoader.Context
 import play.api._
 import play.api.db.evolutions.EvolutionsComponents
