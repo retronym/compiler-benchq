@@ -176,9 +176,7 @@ class CompilerBenchmarkTaskService(database: Database,
     }
   }
 
-  // TODO: provide a method to get a task by id, factor out a common query using #$filter,
-  // https://www.playframework.com/documentation/2.5.x/ScalaAnorm#SQL-queries-using-String-Interpolation
-  def byPriority(nextActions: Set[Action] = Action.values.toSet): List[CompilerBenchmarkTask] =
+  private def getTasks(query: SimpleSql[Row]): List[CompilerBenchmarkTask] = {
     database.withConnection { implicit conn =>
       def benchmarks(taskId: Long): List[Benchmark] = {
         SQL"""select benchmarkId, idx from compilerBenchmarkTaskBenchmark
@@ -187,19 +185,29 @@ class CompilerBenchmarkTaskService(database: Database,
           .map(benchmarkService.findById(_).get)
       }
 
-      // Set[String] is spliced as a list -- using `mkString` wouldn't work.
-      // See also http://stackoverflow.com/questions/9528273/in-clause-in-anorm
-      val as = nextActions.map(_.entryName)
-      SQL"""select * from compilerBenchmarkTask
-            where nextAction in ($as)
-            order by priority asc""".as(taskParser.*) map {
+      query.as(taskParser.*) map {
         case (id, priority, nextAction, scalaVersionId) =>
           CompilerBenchmarkTask(priority,
-                                nextAction,
-                                scalaVersionService.findById(scalaVersionId).get,
-                                benchmarks(id))(Some(id))
+            nextAction,
+            scalaVersionService.findById(scalaVersionId).get,
+            benchmarks(id))(Some(id))
       }
     }
+  }
+
+  private def selectFromTask = "select * from compilerBenchmarkTask"
+  private def orderByPriority = "order by priority asc"
+
+  def findById(id: Long): Option[CompilerBenchmarkTask] = {
+    getTasks(SQL"#$selectFromTask where id = $id #$orderByPriority").headOption
+  }
+
+  def byPriority(nextActions: Set[Action] = Action.values.toSet): List[CompilerBenchmarkTask] = {
+    // Set[String] is spliced as a list -- using `mkString` wouldn't work.
+    // See also http://stackoverflow.com/questions/9528273/in-clause-in-anorm
+    val as = nextActions.map(_.entryName)
+    getTasks(SQL"#$selectFromTask where nextAction in ($as) #$orderByPriority")
+  }
 
   def update(id: Long, task: CompilerBenchmarkTask): Unit = database.withConnection {
     implicit conn =>

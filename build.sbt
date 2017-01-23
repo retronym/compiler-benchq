@@ -32,6 +32,8 @@ initialCommands in Compile in console :=
     |def q = Play.stop(application)
   """.stripMargin
 
+TwirlKeys.templateImports += "benchq.queue._"
+
 // Adds additional packages into Twirl
 // TwirlKeys.templateImports += "org.scala-lang.controllers._"
 

@@ -21,32 +21,19 @@ class HomeControllerSpec extends PlaySpec {
   implicit lazy val app = components.application
 
   "HomeController GET" should {
-    "render the index page from a new instance of controller" in {
-      val controller = new HomeController(components.toolDb)
-      val home = controller.index().apply(FakeRequest())
-
-      status(home) mustBe OK
-      contentType(home) mustBe Some("text/html")
-      contentAsString(home) must include("Welcome to Play")
-    }
-
-    "render the index page from the application" in {
+    "redirect on index" in {
       val controller = components.homeController
       val home = controller.index().apply(FakeRequest())
-
-      status(home) mustBe OK
-      contentType(home) mustBe Some("text/html")
-      contentAsString(home) must include("Welcome to Play")
+      status(home) mustBe SEE_OTHER
+      redirectLocation(home) mustBe Some("/queue")
     }
 
-    "render the index page from the router" in {
-      // Need to specify Host header to get through AllowedHostsFilter
-      val request = FakeRequest(GET, "/").withHeaders("Host" -> "localhost")
-      val home = route(app, request).get
-
+    "render the queue" in {
+      val controller = components.homeController
+      val home = controller.queue().apply(FakeRequest())
       status(home) mustBe OK
       contentType(home) mustBe Some("text/html")
-      contentAsString(home) must include("Welcome to Play")
+      contentAsString(home) must include("Benchmark Queue")
     }
   }
 }

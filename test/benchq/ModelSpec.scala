@@ -97,19 +97,17 @@ class ModelSpec extends PlaySpec with BeforeAndAfterAll {
     }
 
     "update and delete benchmark tasks" in {
-      def byId(id: Long) = compilerBenchmarkTaskService.byPriority().find(_.id == Some(id))
-
       // insert a copy of task1
       val copyId = compilerBenchmarkTaskService.insert(task1)
-      byId(copyId) mustEqual Some(task1)
+      compilerBenchmarkTaskService.findById(copyId) mustEqual Some(task1)
 
       val updated = task1.copy(nextAction = Action.StartBenchmark)(None)
       compilerBenchmarkTaskService.update(copyId, updated)
 
-      byId(copyId) mustEqual Some(updated)
+      compilerBenchmarkTaskService.findById(copyId) mustEqual Some(updated)
 
       compilerBenchmarkTaskService.delete(copyId)
-      byId(copyId) mustEqual None
+      compilerBenchmarkTaskService.findById(copyId) mustEqual None
       // also deletes entries in the compilerBenchmarkTaskBenchmark table
       toolDb
         .query(
