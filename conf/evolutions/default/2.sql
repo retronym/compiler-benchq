@@ -16,9 +16,16 @@ create table benchmarkArgument(
 create table compilerBenchmarkTask(
     id identity primary key,
     priority int,
-    nextAction varchar(128),
+    status varchar(128),
     scalaVersionId bigint,
     foreign key (scalaVersionId) references scalaVersion (id)
+);
+
+create table requestFailedFields(
+    compilerBenchmarkTaskId bigint primary key,
+    previousStatus varchar(128),
+    message varchar(512),
+    foreign key (compilerBenchmarkTaskId) references compilerBenchmarkTask (id) on delete cascade
 );
 
 create table compilerBenchmarkTaskBenchmark(
@@ -35,4 +42,5 @@ create table compilerBenchmarkTaskBenchmark(
 drop table benchmark;
 drop table benchmarkArgument;
 drop table compilerBenchmarkTask;
+drop table requestFailedMessage;
 drop table compilerBenchmarkTaskBenchmark;

@@ -1,5 +1,6 @@
 package benchq
 
+import benchq.queue.Status._
 import benchq.queue._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play._
@@ -27,12 +28,12 @@ class ModelSpec extends PlaySpec with BeforeAndAfterAll {
     arguments = hotBetter.arguments ::: List("extraArgs=-Xmixin-force-forwarders:junit"))(None)
 
   val task1 =
-    CompilerBenchmarkTask(1, Action.WaitForScalaBuild, v2_12_0, List(hotBetter, hotBetterNoForw))(
+    CompilerBenchmarkTask(1, WaitForScalaBuild, v2_12_0, List(hotBetter, hotBetterNoForw))(
       None)
   val task2 = task1.copy(scalaVersion = v2_12_1)(None)
   val task3 = task1.copy(scalaVersion = v2_12_1_noForw)(None)
-  val task4 = task1.copy(priority = 10, nextAction = Action.StartBenchmark)(None)
-  val task5 = task1.copy(priority = 20, nextAction = Action.CheckScalaVersionAvailable)(None)
+  val task4 = task1.copy(priority = 10, status = StartBenchmark)(None)
+  val task5 = task1.copy(priority = 20, status = CheckScalaVersionAvailable)(None)
   val allTasks = Set(task1, task2, task3, task4, task5)
 
   override def beforeAll(): Unit = {
@@ -58,11 +59,11 @@ class ModelSpec extends PlaySpec with BeforeAndAfterAll {
       ts.map(_.priority) mustBe sorted
     }
 
-    "return tasks matching a permitted action" in {
-      compilerBenchmarkTaskService.byPriority(Set(Action.StartBenchmark)) must
+    "return tasks matching a permitted status" in {
+      compilerBenchmarkTaskService.byPriority(Set(StartBenchmark)) must
         contain theSameElementsAs Set(task4)
 
-      compilerBenchmarkTaskService.byPriority(Set(Action.WaitForScalaBuild)) must
+      compilerBenchmarkTaskService.byPriority(Set(WaitForScalaBuild)) must
         contain theSameElementsAs Set(task1, task2, task3)
     }
 
@@ -98,20 +99,31 @@ class ModelSpec extends PlaySpec with BeforeAndAfterAll {
 
     "update and delete benchmark tasks" in {
       // insert a copy of task1
-      val copyId = compilerBenchmarkTaskService.insert(task1)
-      compilerBenchmarkTaskService.findById(copyId) mustEqual Some(task1)
+      val taskId = compilerBenchmarkTaskService.insert(task4)
+      compilerBenchmarkTaskService.findById(taskId) mustEqual Some(task4)
 
-      val updated = task1.copy(nextAction = Action.StartBenchmark)(None)
-      compilerBenchmarkTaskService.update(copyId, updated)
+      // update status
+      val withRequestFailed = task4.copy(status = RequestFailed(StartBenchmark, "could not start benchmark"))(None)
+      compilerBenchmarkTaskService.update(taskId, withRequestFailed)
+      compilerBenchmarkTaskService.findById(taskId) mustEqual Some(withRequestFailed)
 
-      compilerBenchmarkTaskService.findById(copyId) mustEqual Some(updated)
+      // update status to a new one which doesn't have fields
+      val withWait = withRequestFailed.copy(status = WaitForBenchmark)(None)
+      compilerBenchmarkTaskService.update(taskId, withWait)
+      compilerBenchmarkTaskService.findById(taskId) mustEqual Some(withWait)
+      // removes fields of the `RequestFailed` status
+      toolDb
+        .query(
+          s"select * from requestFailedFields where compilerBenchmarkTaskId = $taskId")
+        .mustBe(empty)
 
-      compilerBenchmarkTaskService.delete(copyId)
-      compilerBenchmarkTaskService.findById(copyId) mustEqual None
+      // delete task
+      compilerBenchmarkTaskService.delete(taskId)
+      compilerBenchmarkTaskService.findById(taskId) mustEqual None
       // also deletes entries in the compilerBenchmarkTaskBenchmark table
       toolDb
         .query(
-          s"select * from compilerBenchmarkTaskBenchmark where compilerBenchmarkTaskId = $copyId")
+          s"select * from compilerBenchmarkTaskBenchmark where compilerBenchmarkTaskId = $taskId")
         .mustBe(empty)
     }
   }

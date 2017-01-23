@@ -5,8 +5,10 @@ import java.sql.Connection
 
 import anorm.SqlParser._
 import anorm._
-import enumeratum._
+import benchq.queue.Status._
 import play.api.db.Database
+
+// TODO: split this file up, one per class / service. also move to the package `benchq.model`.
 
 case class ScalaVersion(sha: String, compilerOptions: List[String])(val id: Option[Long])
 
@@ -117,16 +119,49 @@ class BenchmarkService(database: Database) {
   }
 }
 
-sealed trait Action extends EnumEntry
+sealed trait Status {
+  def companion: StatusCompanion
+  def name: String
+}
 
-object Action extends Enum[Action] {
-  val values = findValues
+sealed trait StatusCompanion {
+  def companion: StatusCompanion = this
+  def name: String = StatusCompanion.companionName(this)
+}
 
-  case object CheckScalaVersionAvailable extends Action
-  case object StartScalaBuild extends Action
-  case object WaitForScalaBuild extends Action
-  case object StartBenchmark extends Action
-  case object WaitForBenchmark extends Action
+object Status {
+  case object CheckScalaVersionAvailable extends Status with StatusCompanion
+  case object WaitForScalaVersionAvailable extends Status with StatusCompanion
+  case object StartScalaBuild extends Status with StatusCompanion
+  case object WaitForScalaBuild extends Status with StatusCompanion
+  case object StartBenchmark extends Status with StatusCompanion
+  case object WaitForBenchmark extends Status with StatusCompanion
+  case class RequestFailed(previousStatus: Status, message: String) extends Status {
+    def companion: StatusCompanion = RequestFailed
+    def name: String = companion.name
+  }
+  object RequestFailed extends StatusCompanion
+}
+
+object StatusCompanion {
+  private val companionName: Map[StatusCompanion, String] = {
+    def name(s: StatusCompanion) = s.getClass.getName.split('$').last
+    List(CheckScalaVersionAvailable,
+         WaitForScalaVersionAvailable,
+         StartScalaBuild,
+         WaitForScalaBuild,
+         StartBenchmark,
+         WaitForBenchmark,
+         RequestFailed)
+      .map(s => (s, name(s)))
+      .toMap
+  }
+
+  private val nameToCompanion: Map[String, StatusCompanion] = companionName.map(_.swap)
+
+  def allCompanions: Set[StatusCompanion] = companionName.keySet
+
+  def companion(s: String): StatusCompanion = nameToCompanion(s)
 }
 
 // Longer-term, the tool could support tasks other than scalac benchmarks, like the
@@ -135,11 +170,11 @@ object Action extends Enum[Action] {
 // a table for each type.
 trait Task {
   def priority: Int
-  def nextAction: Action
+  def status: Status
 }
 
 case class CompilerBenchmarkTask(priority: Int,
-                                 nextAction: Action,
+                                 status: Status,
                                  scalaVersion: ScalaVersion,
                                  benchmarks: List[Benchmark])(val id: Option[Long])
     extends Task
@@ -149,14 +184,24 @@ class CompilerBenchmarkTaskService(database: Database,
                                    benchmarkService: BenchmarkService) {
   def insert(task: CompilerBenchmarkTask): Long = database.withConnection { implicit conn =>
     val taskId = SQL"""
-        insert into compilerBenchmarkTask (priority, nextAction, scalaVersionId)
+        insert into compilerBenchmarkTask (priority, status, scalaVersionId)
         values (
           ${task.priority},
-          ${task.nextAction.entryName},
+          ${task.status.name},
           ${scalaVersionService.getIdOrInsert(task.scalaVersion)})"""
       .executeInsert(scalar[Long].single)
+    insertStatusFields(taskId, task.status)
     insertBenchmarks(taskId, task.benchmarks)
     taskId
+  }
+
+  private def insertStatusFields(taskId: Long, status: Status)(implicit conn: Connection): Unit = {
+    status match {
+      case RequestFailed(prev, msg) =>
+        SQL"insert into requestFailedFields values ($taskId, ${prev.name}, $msg)"
+          .executeInsert()
+      case _ =>
+    }
   }
 
   private def insertBenchmarks(taskId: Long, benchmarks: List[Benchmark])(
@@ -169,11 +214,13 @@ class CompilerBenchmarkTaskService(database: Database,
     }
   }
 
-  val taskParser = {
+  private val taskParser = {
     import SqlParser._
-    (long("id") ~ int("priority") ~ str("nextAction") ~ long("scalaVersionId")) map {
-      case i ~ p ~ a ~ s => (i, p, Action.withName(a), s)
-    }
+    long("id") ~ int("priority") ~ str("status") ~ long("scalaVersionId")
+  }
+
+  private val requestFailedFieldsParser = {
+    SqlParser.str("previousStatus") ~ SqlParser.str("message")
   }
 
   private def getTasks(query: SimpleSql[Row]): List[CompilerBenchmarkTask] = {
@@ -185,28 +232,38 @@ class CompilerBenchmarkTaskService(database: Database,
           .map(benchmarkService.findById(_).get)
       }
 
+      def status(id: Long, name: String): Status = StatusCompanion.companion(name) match {
+        case s: Status => s
+        case RequestFailed =>
+          SQL"""select previousStatus, message from requestFailedFields
+                where compilerBenchmarkTaskId = $id"""
+            .as(requestFailedFieldsParser.single) match {
+            case s ~ m => RequestFailed(status(-1, s), m)
+          }
+      }
+
       query.as(taskParser.*) map {
-        case (id, priority, nextAction, scalaVersionId) =>
+        case id ~ priority ~ statusName ~ scalaVersionId =>
           CompilerBenchmarkTask(priority,
-            nextAction,
-            scalaVersionService.findById(scalaVersionId).get,
-            benchmarks(id))(Some(id))
+                                status(id, statusName),
+                                scalaVersionService.findById(scalaVersionId).get,
+                                benchmarks(id))(Some(id))
       }
     }
   }
 
   private def selectFromTask = "select * from compilerBenchmarkTask"
-  private def orderByPriority = "order by priority asc"
 
   def findById(id: Long): Option[CompilerBenchmarkTask] = {
-    getTasks(SQL"#$selectFromTask where id = $id #$orderByPriority").headOption
+    getTasks(SQL"#$selectFromTask where id = $id").headOption
   }
 
-  def byPriority(nextActions: Set[Action] = Action.values.toSet): List[CompilerBenchmarkTask] = {
+  def byPriority(status: Set[StatusCompanion] = StatusCompanion.allCompanions)
+    : List[CompilerBenchmarkTask] = {
     // Set[String] is spliced as a list -- using `mkString` wouldn't work.
     // See also http://stackoverflow.com/questions/9528273/in-clause-in-anorm
-    val as = nextActions.map(_.entryName)
-    getTasks(SQL"#$selectFromTask where nextAction in ($as) #$orderByPriority")
+    val as = status.map(_.name)
+    getTasks(SQL"#$selectFromTask where status in ($as) order by priority asc")
   }
 
   def update(id: Long, task: CompilerBenchmarkTask): Unit = database.withConnection {
@@ -214,12 +271,14 @@ class CompilerBenchmarkTaskService(database: Database,
       val newScalaVersionId = scalaVersionService.getIdOrInsert(task.scalaVersion.copy()(None))
       SQL"""update compilerBenchmarkTask set
             priority = ${task.priority},
-            nextAction = ${task.nextAction.entryName},
+            status = ${task.status.name},
             scalaVersionId = $newScalaVersionId
           where id = $id""".executeUpdate()
 
       SQL"delete from compilerBenchmarkTaskBenchmark where compilerBenchmarkTaskId = $id"
         .executeUpdate()
+      SQL"delete from requestFailedFields where compilerBenchmarkTaskId = $id".executeUpdate()
+      insertStatusFields(id, task.status)
       insertBenchmarks(id, task.benchmarks)
   }
 
@@ -228,3 +287,6 @@ class CompilerBenchmarkTaskService(database: Database,
     SQL"delete from compilerBenchmarkTask where id = $id".executeUpdate()
   }
 }
+
+// TODO: this is just a first stab. data: name-value pairs for benchmark results, metadata
+class BenchmarkResult(benchmark: Benchmark, data: Map[String, String])

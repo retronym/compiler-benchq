@@ -1,8 +1,11 @@
 package benchq
 
+import benchq.bench.BenchmarkRunner
 import benchq.git.GitRepo
 import benchq.influxdb.ResultsDb
+import benchq.jenkins.ScalaJenkins
 import benchq.queue._
+import benchq.repo.ScalaBuildsRepo
 import com.softwaremill.macwire._
 import controllers.Assets
 import controllers.HomeController
@@ -43,6 +46,9 @@ class BenchQComponents(context: Context)
 
   lazy val queue: TaskQueue = wire[TaskQueue]
   lazy val gitRepo: GitRepo = wire[GitRepo]
+  lazy val benchmarkRunner: BenchmarkRunner = wire[BenchmarkRunner]
+  lazy val scalaJenkins: ScalaJenkins = wire[ScalaJenkins]
+  lazy val scalaBuildsRepo: ScalaBuildsRepo = wire[ScalaBuildsRepo]
   lazy val webhooks: Webhooks = wire[Webhooks]
 
   lazy val scalaVersionService: ScalaVersionService = wire[ScalaVersionService]

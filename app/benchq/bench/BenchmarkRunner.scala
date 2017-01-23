@@ -1,3 +1,12 @@
-package benchq.bench
+package benchq
+package bench
 
-class BenchmarkRunner {}
+import benchq.queue.CompilerBenchmarkTask
+
+import scala.concurrent.Future
+
+class BenchmarkRunner {
+  def startBenchmark(compilerBenchmarkTask: CompilerBenchmarkTask): Future[Unit] = {
+    Future.successful(())
+  }
+}
