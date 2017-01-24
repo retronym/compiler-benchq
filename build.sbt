@@ -13,9 +13,10 @@ libraryDependencies ++= List(
   evolutions,
   "com.typesafe.play"        %% "anorm"              % "2.5.0",
   "org.influxdb"             %  "influxdb-java"      % "2.5",
-  "com.softwaremill.macwire" %% "macros"             % "2.2.5" % "provided",
+  "com.softwaremill.macwire" %% "macros"             % "2.2.5"  % "provided",
   "com.beachape"             %% "enumeratum"         % "1.5.6",
-  "org.scalatestplus.play"   %% "scalatestplus-play" % "1.5.1" % Test)
+  "org.scalatestplus.play"   %% "scalatestplus-play" % "1.5.1"  % Test,
+  "com.typesafe.akka"        %% "akka-testkit"       % "2.4.12" % Test)
 
 // Access to components in console, interface with DBs
 // When using the database in the REPL, need to call `q` before leaving the REPL. Otherwise the

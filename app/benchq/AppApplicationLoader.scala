@@ -7,8 +7,7 @@ import benchq.jenkins.ScalaJenkins
 import benchq.queue._
 import benchq.repo.ScalaBuildsRepo
 import com.softwaremill.macwire._
-import controllers.Assets
-import controllers.HomeController
+import controllers.{Assets, HomeController}
 import play.api.ApplicationLoader.Context
 import play.api._
 import play.api.db.evolutions.EvolutionsComponents
@@ -44,7 +43,7 @@ class BenchQComponents(context: Context)
   lazy val toolDb: ToolDb = wire[ToolDb]
   lazy val resultsDb: ResultsDb = wire[ResultsDb]
 
-  lazy val queue: TaskQueue = wire[TaskQueue]
+  lazy val taskQueue: TaskQueue = wire[TaskQueue]
   lazy val gitRepo: GitRepo = wire[GitRepo]
   lazy val benchmarkRunner: BenchmarkRunner = wire[BenchmarkRunner]
   lazy val scalaJenkins: ScalaJenkins = wire[ScalaJenkins]

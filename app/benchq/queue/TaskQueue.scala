@@ -24,7 +24,14 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
                 benchmarkRunner: BenchmarkRunner,
                 scalaBuildsRepo: ScalaBuildsRepo,
                 scalaJenkins: ScalaJenkins,
-                resultsDb: ResultsDb) {
+                resultsDb: ResultsDb,
+                system: ActorSystem) {
+
+  val queueActor = system.actorOf(QueueActor.props, "queue-actor")
+
+  object QueueActor {
+    val props = Props(new QueueActor)
+  }
 
   class QueueActor extends Actor {
     def updateStatus(task: CompilerBenchmarkTask, newStatus: Status): Unit =
@@ -46,29 +53,29 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
 
         for (task <- queue; id = task.id.get) task.status match {
           case CheckScalaVersionAvailable =>
+            updateStatus(task, WaitForScalaVersionAvailable)
             scalaBuildsRepo
               .checkBuildAvailable(task.scalaVersion)
               .onComplete(res => self ! ScalaVersionAvailable(id, res))
-            updateStatus(task, WaitForScalaVersionAvailable)
 
           case StartScalaBuild =>
+            updateStatus(task, WaitForScalaBuild)
             scalaJenkins
               .startScalaBuild(task.scalaVersion)
               .onComplete(res => self ! ScalaBuildStarted(id, res))
-            updateStatus(task, WaitForScalaBuild)
 
           case StartBenchmark if canStartBenchmark =>
+            updateStatus(task, WaitForBenchmark)
             benchmarkRunner
               .startBenchmark(task)
               .onComplete(res => self ! BenchmarkStarted(id, res))
-            updateStatus(task, WaitForBenchmark)
             canStartBenchmark = false
 
           case SendResults =>
+            updateStatus(task, WaitForSendResults)
             resultsDb
               .sendResults(task, benchmarkResultService.resultsForTask(id))
               .onComplete(res => self ! ResultsSent(id, res))
-            updateStatus(task, WaitForSendResults)
 
           case _ =>
         }
