@@ -3,10 +3,10 @@ package jenkins
 
 import benchq.queue.ScalaVersion
 
-import scala.util.{Success, Try}
+import scala.concurrent.Future
 
 class ScalaJenkins {
-  def startScalaBuild(scalaVerison: ScalaVersion): Try[Unit] = {
-    Success(())
+  def startScalaBuild(scalaVerison: ScalaVersion): Future[Unit] = {
+    Future.successful(())
   }
 }
