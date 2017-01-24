@@ -54,7 +54,7 @@ class ModelSpec extends PlaySpec with BeforeAndAfterAll {
     }
 
     "return all tasks sorted by priority" in {
-      val ts = compilerBenchmarkTaskService.byPriority()
+      val ts = compilerBenchmarkTaskService.byPriority(StatusCompanion.allCompanions)
       ts must contain theSameElementsAs allTasks
       ts.map(_.priority) mustBe sorted
     }

@@ -3,6 +3,7 @@ package queue
 
 import akka.actor._
 import benchq.bench.BenchmarkRunner
+import benchq.influxdb.ResultsDb
 import benchq.jenkins.ScalaJenkins
 import benchq.queue.Status._
 import benchq.repo.ScalaBuildsRepo
@@ -10,17 +11,20 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 import scala.util.{Failure, Success, Try}
 
-object PingQueue
+case object PingQueue
 case class ScalaVersionAvailable(taskId: Long, versionAvailable: Try[Boolean])
 case class ScalaBuildStarted(taskId: Long, res: Try[Unit])
 case class ScalaBuildFinished(taskId: Long, buildSucceeded: Try[Boolean])
 case class BenchmarkStarted(taskId: Long, res: Try[Unit])
 case class BenchmarkFinished(taskId: Long, results: Try[List[BenchmarkResult]])
+case class ResultsSent(taskId: Long, res: Try[Unit])
 
 class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
+                benchmarkResultService: BenchmarkResultService,
                 benchmarkRunner: BenchmarkRunner,
                 scalaBuildsRepo: ScalaBuildsRepo,
-                scalaJenkins: ScalaJenkins) {
+                scalaJenkins: ScalaJenkins,
+                resultsDb: ResultsDb) {
 
   class QueueActor extends Actor {
     def updateStatus(task: CompilerBenchmarkTask, newStatus: Status): Unit =
@@ -37,7 +41,7 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
 
     def receive: Receive = {
       case PingQueue => // traverse entire queue, start jobs for actionable items
-        val queue = compilerBenchmarkTaskService.byPriority()
+        val queue = compilerBenchmarkTaskService.byPriority(StatusCompanion.actionableCompanions)
         var canStartBenchmark = !queue.exists(_.status == WaitForBenchmark)
 
         for (task <- queue; id = task.id.get) task.status match {
@@ -59,6 +63,12 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
               .onComplete(res => self ! BenchmarkStarted(id, res))
             updateStatus(task, WaitForBenchmark)
             canStartBenchmark = false
+
+          case SendResults =>
+            resultsDb
+              .sendResults(task, benchmarkResultService.resultsForTask(id))
+              .onComplete(res => self ! ResultsSent(id, res))
+            updateStatus(task, WaitForSendResults)
 
           case _ =>
         }
@@ -90,8 +100,15 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
         ifSuccess(id, tryRes)((_, _) => ())
 
       case BenchmarkFinished(id, tryResults) =>
-        // TODO: persist results, send them to InfluxDB
-        compilerBenchmarkTaskService.delete(id)
+        ifSuccess(id, tryResults) { (task, results) =>
+          benchmarkResultService.insertResults(results)
+          updateStatus(task, SendResults)
+        }
+
+      case ResultsSent(id, tryResult) =>
+        ifSuccess(id, tryResult) { (task, _) =>
+          updateStatus(task, Done)
+        }
     }
   }
 }

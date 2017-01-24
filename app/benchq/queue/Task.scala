@@ -136,6 +136,9 @@ object Status {
   case object WaitForScalaBuild extends Status with StatusCompanion
   case object StartBenchmark extends Status with StatusCompanion
   case object WaitForBenchmark extends Status with StatusCompanion
+  case object SendResults extends Status with StatusCompanion
+  case object WaitForSendResults extends Status with StatusCompanion
+  case object Done extends Status with StatusCompanion
   case class RequestFailed(previousStatus: Status, message: String) extends Status {
     def companion: StatusCompanion = RequestFailed
     def name: String = companion.name
@@ -146,20 +149,26 @@ object Status {
 object StatusCompanion {
   private val companionName: Map[StatusCompanion, String] = {
     def name(s: StatusCompanion) = s.getClass.getName.split('$').last
-    List(CheckScalaVersionAvailable,
-         WaitForScalaVersionAvailable,
-         StartScalaBuild,
-         WaitForScalaBuild,
-         StartBenchmark,
-         WaitForBenchmark,
-         RequestFailed)
-      .map(s => (s, name(s)))
-      .toMap
+    List(
+      CheckScalaVersionAvailable,
+      WaitForScalaVersionAvailable,
+      StartScalaBuild,
+      WaitForScalaBuild,
+      StartBenchmark,
+      WaitForBenchmark,
+      SendResults,
+      WaitForSendResults,
+      Done,
+      RequestFailed
+    ).map(s => (s, name(s))).toMap
   }
 
   private val nameToCompanion: Map[String, StatusCompanion] = companionName.map(_.swap)
 
   def allCompanions: Set[StatusCompanion] = companionName.keySet
+
+  def actionableCompanions: Set[StatusCompanion] =
+    Set(CheckScalaVersionAvailable, StartScalaBuild, StartBenchmark, SendResults)
 
   def companion(s: String): StatusCompanion = nameToCompanion(s)
 }
@@ -258,8 +267,7 @@ class CompilerBenchmarkTaskService(database: Database,
     getTasks(SQL"#$selectFromTask where id = $id").headOption
   }
 
-  def byPriority(status: Set[StatusCompanion] = StatusCompanion.allCompanions)
-    : List[CompilerBenchmarkTask] = {
+  def byPriority(status: Set[StatusCompanion]): List[CompilerBenchmarkTask] = {
     // Set[String] is spliced as a list -- using `mkString` wouldn't work.
     // See also http://stackoverflow.com/questions/9528273/in-clause-in-anorm
     val as = status.map(_.name)
@@ -289,4 +297,10 @@ class CompilerBenchmarkTaskService(database: Database,
 }
 
 // TODO: this is just a first stab. data: name-value pairs for benchmark results, metadata
-class BenchmarkResult(benchmark: Benchmark, data: Map[String, String])
+class BenchmarkResult(taskId: Long, benchmark: Benchmark, data: Map[String, String])
+
+class BenchmarkResultService(database: Database) {
+  def resultsForTask(taskId: Long): List[BenchmarkResult] = Nil
+
+  def insertResults(results: List[BenchmarkResult]): Unit = ()
+}

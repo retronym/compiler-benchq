@@ -2,8 +2,8 @@ package controllers
 
 import javax.inject._
 
-import benchq.ToolDb
-import benchq.queue.CompilerBenchmarkTaskService
+import benchq.queue.Status.Done
+import benchq.queue.{CompilerBenchmarkTaskService, StatusCompanion}
 import play.api.mvc._
 import views._
 
@@ -20,6 +20,6 @@ class HomeController(compilerBenchmarkTaskService: CompilerBenchmarkTaskService)
   def index = Action(Home)
 
   def queue() = Action { implicit request =>
-    Ok(html.queue(compilerBenchmarkTaskService.byPriority()))
+    Ok(html.queue(compilerBenchmarkTaskService.byPriority(StatusCompanion.allCompanions - Done)))
   }
 }

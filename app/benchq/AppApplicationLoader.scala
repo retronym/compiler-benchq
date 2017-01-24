@@ -55,6 +55,7 @@ class BenchQComponents(context: Context)
   lazy val benchmarkService: BenchmarkService = wire[BenchmarkService]
   lazy val compilerBenchmarkTaskService: CompilerBenchmarkTaskService =
     wire[CompilerBenchmarkTaskService]
+  lazy val benchmarkResultService: BenchmarkResultService = wire[BenchmarkResultService]
 
   lazy val homeController: HomeController = wire[HomeController]
 }

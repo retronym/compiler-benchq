@@ -1,6 +1,7 @@
 package benchq
 package influxdb
 
+import benchq.queue.{BenchmarkResult, CompilerBenchmarkTask}
 import okhttp3.Interceptor.Chain
 import okhttp3._
 import org.influxdb.dto.Query
@@ -9,6 +10,7 @@ import org.influxdb.{InfluxDB, InfluxDBFactory}
 import play.api.Configuration
 
 import scala.collection.convert.decorateAsScala._
+import scala.concurrent.Future
 
 class ResultsDb(config: Configuration) {
   private def configString(path: String): String =
@@ -23,6 +25,10 @@ class ResultsDb(config: Configuration) {
   private val influxUser = configString("influx.user")
   private val influxPassword = configString("influx.password")
   private val influxDbName = "scala_benchmark"
+
+  def sendResults(task: CompilerBenchmarkTask, results: List[BenchmarkResult]): Future[Unit] = {
+    Future.successful(())
+  }
 
   // utilities for console interaction: `sbt console`, `scala> resultsDb.createDb()`
 
