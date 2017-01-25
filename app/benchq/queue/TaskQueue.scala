@@ -110,6 +110,7 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
         ifSuccess(id, tryResults) { (task, results) =>
           benchmarkResultService.insertResults(results)
           updateStatus(task, SendResults)
+          self ! PingQueue
         }
 
       case ResultsSent(id, tryResult) =>

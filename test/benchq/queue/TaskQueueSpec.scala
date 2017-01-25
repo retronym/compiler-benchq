@@ -13,10 +13,11 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play.PlaySpec
 import play.api.db.evolutions.Evolutions
 import play.api.db.{Database, Databases}
-import play.api.{ApplicationLoader, Environment}
+import play.api.{ApplicationLoader, Configuration, Environment}
 
 import scala.collection.mutable
 import scala.concurrent.Future
+import scala.util.Success
 
 class TaskQueueSpec extends PlaySpec with BeforeAndAfterAll {
 
@@ -30,6 +31,14 @@ class TaskQueueSpec extends PlaySpec with BeforeAndAfterAll {
   class BenchmarkRunnerMock extends BenchmarkRunner {
     override def startBenchmark(task: CompilerBenchmarkTask): Future[Unit] = {
       actions("startBenchmark") = task
+      Future.successful(())
+    }
+  }
+
+  class ResultsDbMock(config: Configuration) extends ResultsDb(config) {
+    override def sendResults(task: CompilerBenchmarkTask,
+                             results: List[BenchmarkResult]): Future[Unit] = {
+      actions("sendResults") = results
       Future.successful(())
     }
   }
@@ -64,6 +73,7 @@ class TaskQueueSpec extends PlaySpec with BeforeAndAfterAll {
       override lazy val database: Database = Databases.inMemory()
       override lazy val scalaBuildsRepo: ScalaBuildsRepo = wire[ScalaBuildsRepoMock]
       override lazy val benchmarkRunner: BenchmarkRunner = wire[BenchmarkRunnerMock]
+      override lazy val resultsDb: ResultsDb = wire[ResultsDbMock]
       override lazy val taskQueue: TestTaskQueue = wire[TestTaskQueue]
     }
   }
@@ -105,7 +115,16 @@ class TaskQueueSpec extends PlaySpec with BeforeAndAfterAll {
         task.copy(status = WaitForBenchmark)(None))
       actions("checkBuildAvailable") mustBe v2_12_0
       actions("startBenchmark") mustBe task.copy(status = StartBenchmark)(None)
+
+      val results = List(BenchmarkResult(id, bench, Map.empty))
+      testActor ! BenchmarkFinished(id, Success(results))
+
+      probe.expectMsgType[BenchmarkFinished]
+      probe.expectMsg(PingQueue)
+      probe.expectMsgType[ResultsSent]
+
+      compilerBenchmarkTaskService.findById(id) mustEqual Some(task.copy(status = Done)(None))
+      actions("sendResults") mustBe Nil // getting results from the DB not yet implemented
     }
   }
-
 }
