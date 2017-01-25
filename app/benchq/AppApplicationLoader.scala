@@ -12,6 +12,7 @@ import play.api.ApplicationLoader.Context
 import play.api._
 import play.api.db.evolutions.EvolutionsComponents
 import play.api.db.{DBComponents, Database, HikariCPComponents}
+import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.routing.Router
 import router.Routes
 
@@ -32,7 +33,8 @@ class BenchQComponents(context: Context)
     extends BuiltInComponentsFromContext(context)
     with DBComponents
     with HikariCPComponents
-    with EvolutionsComponents {
+    with EvolutionsComponents
+    with AhcWSComponents {
   lazy val assets: Assets = wire[Assets]
   lazy val router: Router = {
     lazy val prefix = "/"
@@ -43,6 +45,7 @@ class BenchQComponents(context: Context)
   lazy val toolDb: ToolDb = wire[ToolDb]
   lazy val resultsDb: ResultsDb = wire[ResultsDb]
 
+  lazy val config: Config = wire[Config]
   lazy val taskQueue: TaskQueue = wire[TaskQueue]
   lazy val gitRepo: GitRepo = wire[GitRepo]
   lazy val benchmarkRunner: BenchmarkRunner = wire[BenchmarkRunner]

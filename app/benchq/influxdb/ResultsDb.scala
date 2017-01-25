@@ -12,19 +12,8 @@ import play.api.Configuration
 import scala.collection.convert.decorateAsScala._
 import scala.concurrent.Future
 
-class ResultsDb(config: Configuration) {
-  private def configString(path: String): String =
-    config.getString(path).getOrElse(throw config.globalError(s"Missing config: $path"))
-
-  private def trimSl(s: String) = s.replaceFirst("^/*", "").replaceFirst("/*$", "")
-
-  private val influxBaseUrl = trimSl(configString("influx.baseUrl"))
-  private val influxUrlPath = "/" + trimSl(configString("influx.urlPath"))
-  private val influxUrl = influxBaseUrl + influxUrlPath + "/"
-
-  private val influxUser = configString("influx.user")
-  private val influxPassword = configString("influx.password")
-  private val influxDbName = "scala_benchmark"
+class ResultsDb(config: Config) {
+  import config.InfluxDb._
 
   def sendResults(task: CompilerBenchmarkTask, results: List[BenchmarkResult]): Future[Unit] = {
     Future.successful(())

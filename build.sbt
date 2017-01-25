@@ -11,6 +11,7 @@ libraryDependencies ++= List(
   filters,
   jdbc,
   evolutions,
+  ws,
   "com.typesafe.play"        %% "anorm"              % "2.5.0",
   "org.influxdb"             %  "influxdb-java"      % "2.5",
   "com.softwaremill.macwire" %% "macros"             % "2.2.5"  % "provided",
@@ -23,6 +24,7 @@ libraryDependencies ++= List(
 // connection remains open, and a subsequent `run` or `console` won't be able to connect to the DB.
 initialCommands in Compile in console :=
   """import play.api._, benchq._, queue._
+    |import play.api.libs.concurrent.Execution.Implicits.defaultContext
     |val components = {
     |  val env = Environment.simple()
     |  val context = ApplicationLoader.createContext(env)
