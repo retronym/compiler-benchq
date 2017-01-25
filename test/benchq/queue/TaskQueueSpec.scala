@@ -13,6 +13,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play.PlaySpec
 import play.api.db.evolutions.Evolutions
 import play.api.db.{Database, Databases}
+import play.api.libs.ws.WSClient
 import play.api.{ApplicationLoader, Configuration, Environment}
 
 import scala.collection.mutable
@@ -21,10 +22,10 @@ import scala.util.Success
 
 class TaskQueueSpec extends PlaySpec with BeforeAndAfterAll {
 
-  class ScalaBuildsRepoMock extends ScalaBuildsRepo {
-    override def checkBuildAvailable(scalaVersion: ScalaVersion): Future[Boolean] = {
+  class ScalaBuildsRepoMock(ws: WSClient, config: Config) extends ScalaBuildsRepo(ws, config) {
+    override def checkBuildAvailable(scalaVersion: ScalaVersion): Future[Option[String]] = {
       actions("checkBuildAvailable") = scalaVersion
-      Future.successful(if (scalaVersion == v2_12_0) true else false)
+      Future.successful(if (scalaVersion == v2_12_0) Some("2.12.0") else None)
     }
   }
 
@@ -35,7 +36,7 @@ class TaskQueueSpec extends PlaySpec with BeforeAndAfterAll {
     }
   }
 
-  class ResultsDbMock(config: Configuration) extends ResultsDb(config) {
+  class ResultsDbMock(config: Config) extends ResultsDb(config) {
     override def sendResults(task: CompilerBenchmarkTask,
                              results: List[BenchmarkResult]): Future[Unit] = {
       actions("sendResults") = results

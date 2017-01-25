@@ -22,6 +22,13 @@ scalaJenkins {
   token = ""
 }
 
+scalaBuildsRepo {
+  host = "https://scala-ci.typesafe.com/artifactory/api"
+  repo = "scala-release-temp"
+  user = "scala-ci"
+  password = ""
+}
+
 github {
   host = "api.github.com"
   token = ""

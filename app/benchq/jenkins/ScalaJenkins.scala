@@ -2,8 +2,8 @@ package benchq
 package jenkins
 
 import benchq.queue.ScalaVersion
-import play.api.libs.ws.{WSAuthScheme, WSClient}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.libs.ws.{WSAuthScheme, WSClient}
 import play.api.mvc.Results
 
 import scala.concurrent.Future

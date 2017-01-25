@@ -23,4 +23,11 @@ class Config(config: Configuration) {
     val user = configString("scalaJenkins.user")
     val token = configString("scalaJenkins.token")
   }
+
+  object ScalaBuildsRepo {
+    val host = trimSl(configString("scalaBuildsRepo.host"))
+    val repo = configString("scalaBuildsRepo.repo")
+    val user = configString("scalaBuildsRepo.user")
+    val password = configString("scalaBuildsRepo.password")
+  }
 }

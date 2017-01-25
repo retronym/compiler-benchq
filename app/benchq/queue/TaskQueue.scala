@@ -12,7 +12,7 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import scala.util.{Failure, Success, Try}
 
 case object PingQueue
-case class ScalaVersionAvailable(taskId: Long, versionAvailable: Try[Boolean])
+case class ScalaVersionAvailable(taskId: Long, artifactName: Try[Option[String]])
 case class ScalaBuildStarted(taskId: Long, res: Try[Unit])
 case class ScalaBuildFinished(taskId: Long, buildSucceeded: Try[Boolean])
 case class BenchmarkStarted(taskId: Long, res: Try[Unit])
@@ -80,9 +80,13 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
           case _ =>
         }
 
-      case ScalaVersionAvailable(id, tryVersionAvailable) =>
-        ifSuccess(id, tryVersionAvailable) { (task, available) =>
-          updateStatus(task, if (available) StartBenchmark else StartScalaBuild)
+      case ScalaVersionAvailable(id, tryArtifactName) =>
+        ifSuccess(id, tryArtifactName) { (task, artifactName) =>
+          val newStatus = artifactName match {
+            case Some(artifact) => StartBenchmark // TODO: pass on artifact name
+            case None => StartScalaBuild
+          }
+          updateStatus(task, newStatus)
           self ! PingQueue
         }
 
