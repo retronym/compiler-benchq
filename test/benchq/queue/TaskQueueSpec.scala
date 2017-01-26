@@ -3,7 +3,6 @@ package queue
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.TestProbe
-import benchq.bench.BenchmarkRunner
 import benchq.influxdb.ResultsDb
 import benchq.jenkins.ScalaJenkins
 import benchq.queue.Status._
@@ -14,7 +13,7 @@ import org.scalatestplus.play.PlaySpec
 import play.api.db.evolutions.Evolutions
 import play.api.db.{Database, Databases}
 import play.api.libs.ws.WSClient
-import play.api.{ApplicationLoader, Configuration, Environment}
+import play.api.{ApplicationLoader, Environment}
 
 import scala.collection.mutable
 import scala.concurrent.Future
@@ -29,7 +28,13 @@ class TaskQueueSpec extends PlaySpec with BeforeAndAfterAll {
     }
   }
 
-  class BenchmarkRunnerMock extends BenchmarkRunner {
+  class ScalaJenkinsMock(ws: WSClient, config: Config, scalaBuildsRepo: ScalaBuildsRepo)
+      extends ScalaJenkins(ws, config, scalaBuildsRepo) {
+    override def startScalaBuild(scalaVersion: ScalaVersion): Future[Unit] = {
+      actions("startScalaBuild") = scalaVersion
+      Future.successful(())
+    }
+
     override def startBenchmark(task: CompilerBenchmarkTask): Future[Unit] = {
       actions("startBenchmark") = task
       Future.successful(())
@@ -46,14 +51,12 @@ class TaskQueueSpec extends PlaySpec with BeforeAndAfterAll {
 
   class TestTaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
                       benchmarkResultService: BenchmarkResultService,
-                      benchmarkRunner: BenchmarkRunner,
                       scalaBuildsRepo: ScalaBuildsRepo,
                       scalaJenkins: ScalaJenkins,
                       resultsDb: ResultsDb,
                       system: ActorSystem)
       extends TaskQueue(compilerBenchmarkTaskService,
                         benchmarkResultService,
-                        benchmarkRunner,
                         scalaBuildsRepo,
                         scalaJenkins,
                         resultsDb,
@@ -73,7 +76,7 @@ class TaskQueueSpec extends PlaySpec with BeforeAndAfterAll {
     new BenchQComponents(context) {
       override lazy val database: Database = Databases.inMemory()
       override lazy val scalaBuildsRepo: ScalaBuildsRepo = wire[ScalaBuildsRepoMock]
-      override lazy val benchmarkRunner: BenchmarkRunner = wire[BenchmarkRunnerMock]
+      override lazy val scalaJenkins: ScalaJenkins = wire[ScalaJenkinsMock]
       override lazy val resultsDb: ResultsDb = wire[ResultsDbMock]
       override lazy val taskQueue: TestTaskQueue = wire[TestTaskQueue]
     }

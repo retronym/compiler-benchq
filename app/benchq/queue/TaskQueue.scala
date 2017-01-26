@@ -2,7 +2,6 @@ package benchq
 package queue
 
 import akka.actor._
-import benchq.bench.BenchmarkRunner
 import benchq.influxdb.ResultsDb
 import benchq.jenkins.ScalaJenkins
 import benchq.queue.Status._
@@ -21,7 +20,6 @@ case class ResultsSent(taskId: Long, res: Try[Unit])
 
 class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
                 benchmarkResultService: BenchmarkResultService,
-                benchmarkRunner: BenchmarkRunner,
                 scalaBuildsRepo: ScalaBuildsRepo,
                 scalaJenkins: ScalaJenkins,
                 resultsDb: ResultsDb,
@@ -66,7 +64,7 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
 
           case StartBenchmark if canStartBenchmark =>
             updateStatus(task, WaitForBenchmark)
-            benchmarkRunner
+            scalaJenkins
               .startBenchmark(task)
               .onComplete(res => self ! BenchmarkStarted(id, res))
             canStartBenchmark = false
