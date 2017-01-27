@@ -24,7 +24,7 @@ libraryDependencies ++= List(
 // When using the database in the REPL, need to call `q` before leaving the REPL. Otherwise the
 // connection remains open, and a subsequent `run` or `console` won't be able to connect to the DB.
 initialCommands in Compile in console :=
-  """import play.api._, benchq._, queue._
+  """import play.api._, benchq._, model._, Status._
     |import play.api.libs.concurrent.Execution.Implicits.defaultContext
     |val components = {
     |  val env = Environment.simple()
@@ -36,7 +36,7 @@ initialCommands in Compile in console :=
     |def q = Play.stop(application)
   """.stripMargin
 
-TwirlKeys.templateImports += "benchq.queue._"
+TwirlKeys.templateImports += "benchq.model._"
 
 // Adds additional packages into Twirl
 // TwirlKeys.templateImports += "org.scala-lang.controllers._"
