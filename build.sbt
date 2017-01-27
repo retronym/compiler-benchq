@@ -3,7 +3,7 @@ organization := "org.scala-lang"
 
 version := "1.0-SNAPSHOT"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala)
+lazy val root = (project in file(".")).enablePlugins(PlayScala, DebianPlugin)
 
 scalaVersion := "2.11.8"
 
@@ -37,9 +37,6 @@ initialCommands in Compile in console :=
   """.stripMargin
 
 TwirlKeys.templateImports += "benchq.model._"
-
-// Adds additional packages into Twirl
-// TwirlKeys.templateImports += "org.scala-lang.controllers._"
 
 // Adds additional packages into conf/routes
 // play.sbt.routes.RoutesKeys.routesImport += "org.scala-lang.binders._"

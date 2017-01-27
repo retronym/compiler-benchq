@@ -9,6 +9,8 @@ import play.api._
 import play.api.db.evolutions.Evolutions
 import play.api.db.{Database, Databases}
 
+// TODO: clean up, move to benchq.model package, improve coverage
+
 class ModelSpec extends PlaySpec with BeforeAndAfterAll {
   lazy val components = {
     val env = Environment.simple()

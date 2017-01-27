@@ -21,6 +21,8 @@ import scala.collection.mutable
 import scala.concurrent.Future
 import scala.util.Success
 
+// TODO: improve coverage
+
 class TaskQueueSpec extends PlaySpec with BeforeAndAfterAll {
 
   class ScalaBuildsRepoMock(ws: WSClient, config: Config) extends ScalaBuildsRepo(ws, config) {
