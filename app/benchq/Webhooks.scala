@@ -9,9 +9,11 @@ import play.api.mvc._
 import scala.util.{Failure, Success, Try}
 
 class Webhooks(taskQueue: TaskQueue) extends Controller {
+  val xGhEventHeader = "X-GitHub-Event"
+
   def github: Action[JsValue] = Action(parse.json) { implicit req =>
     req.headers
-      .get("X-GitHub-Event")
+      .get(xGhEventHeader)
       .map({
         case "push" =>
           // https://developer.github.com/v3/activity/events/types/#pushevent
@@ -26,7 +28,7 @@ class Webhooks(taskQueue: TaskQueue) extends Controller {
         case e =>
           NotImplemented(s"Server does not handle webhook event $e")
       })
-      .getOrElse(BadRequest("Missing `X-GitHub-Event` header"))
+      .getOrElse(BadRequest(s"Missing `$xGhEventHeader` header"))
   }
 
   val BootstrapTask = """scala-2\.1\d\.x-integrate-bootstrap""".r
@@ -57,6 +59,8 @@ class Webhooks(taskQueue: TaskQueue) extends Controller {
           if (status == SuccessStr) Success(())
           else Failure(new Exception(s"Scala build failed: $url"))
         taskQueue.queueActor ! taskQueue.QueueActor.ScalaBuildFinished(taskId, res)
+        // TODO: find other builds waiting for the same scala version, there might be other
+        // builds in the queue waiting for this build to finish
 
       case _ =>
     }
