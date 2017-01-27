@@ -1,13 +1,13 @@
 package benchq
 package queue
 
-import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.actor.{ActorRef, Props}
 import akka.testkit.TestProbe
 import benchq.git.GitRepo
 import benchq.influxdb.ResultsDb
 import benchq.jenkins.ScalaJenkins
-import benchq.model._
 import benchq.model.Status._
+import benchq.model._
 import benchq.repo.ScalaBuildsRepo
 import com.softwaremill.macwire._
 import org.scalatest.BeforeAndAfterAll
@@ -30,10 +30,13 @@ class TaskQueueSpec extends PlaySpec with BeforeAndAfterAll {
     }
   }
 
-  class ScalaJenkinsMock(ws: WSClient, config: Config, scalaBuildsRepo: ScalaBuildsRepo)
-      extends ScalaJenkins(ws, config, scalaBuildsRepo) {
-    override def startScalaBuild(scalaVersion: ScalaVersion): Future[Unit] = {
-      actions("startScalaBuild") = scalaVersion
+  class ScalaJenkinsMock(ws: WSClient,
+                         config: Config,
+                         scalaBuildsRepo: ScalaBuildsRepo,
+                         gitRepo: GitRepo)
+      extends ScalaJenkins(ws, config, scalaBuildsRepo, gitRepo) {
+    override def startScalaBuild(task: CompilerBenchmarkTask): Future[Unit] = {
+      actions("startScalaBuild") = task
       Future.successful(())
     }
 

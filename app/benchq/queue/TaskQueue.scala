@@ -30,7 +30,7 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
     case object PingQueue
     case class ScalaVersionAvailable(taskId: Long, artifactName: Try[Option[String]])
     case class ScalaBuildStarted(taskId: Long, res: Try[Unit])
-    case class ScalaBuildFinished(taskId: Long, buildSucceeded: Try[Boolean])
+    case class ScalaBuildFinished(taskId: Long, buildSucceeded: Try[Unit])
     case class BenchmarkStarted(taskId: Long, res: Try[Unit])
     case class BenchmarkFinished(taskId: Long, results: Try[List[BenchmarkResult]])
     case class ResultsSent(taskId: Long, res: Try[Unit])
@@ -67,7 +67,7 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
           case StartScalaBuild =>
             updateStatus(task, WaitForScalaBuild)
             scalaJenkins
-              .startScalaBuild(task.scalaVersion)
+              .startScalaBuild(task)
               .onComplete(res => self ! ScalaBuildStarted(id, res))
 
           case StartBenchmark if canStartBenchmark =>
@@ -101,14 +101,10 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
         // the `ScalaBuildFinished` message triggered by the Jenkins webhook.
         ifSuccess(id, tryRes)((_, _) => ())
 
-      case ScalaBuildFinished(id, tryBuildSucceeded) =>
-        ifSuccess(id, tryBuildSucceeded) { (task, succeeded) =>
-          if (succeeded) {
-            updateStatus(task, StartBenchmark)
-            self ! PingQueue
-          } else {
-            updateStatus(task, RequestFailed(task.status, "Scala build failed."))
-          }
+      case ScalaBuildFinished(id, tryRes) =>
+        ifSuccess(id, tryRes) { (task, _) =>
+          updateStatus(task, StartBenchmark)
+          self ! PingQueue
         }
 
       case BenchmarkStarted(id, tryRes) =>

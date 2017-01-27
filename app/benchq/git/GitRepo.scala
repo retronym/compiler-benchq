@@ -5,6 +5,7 @@ import benchq.model.{Branch, KnownRevision}
 import better.files._
 
 import scala.sys.process._
+import scala.util.Try
 
 class GitRepo(config: Config) {
   import config.GitRepo._
@@ -30,5 +31,24 @@ class GitRepo(config: Config) {
     Process(
       s"git log --first-parent --pretty=format:'%H' ${knownRevision.revision}..origin/${knownRevision.branch.entryName}",
       checkoutDirectoryJ).lineStream.toList
+  }
+
+  def leastBranchContaining(sha: String): Try[Option[Branch]] = {
+    fetchOrigin()
+    val originPrefix = "origin/"
+    Try {
+      val containingBranches =
+        Process(s"git branch -r --contains $sha", checkoutDirectoryJ).lineStream
+          .map(_.trim)
+          .collect({
+            case s if s.startsWith(originPrefix) => s.substring(originPrefix.length)
+          })
+          .toSet
+      Branch.values
+        .filter(b => containingBranches(b.entryName))
+        .toList
+        .sortBy(_.entryName)
+        .headOption
+    }
   }
 }
