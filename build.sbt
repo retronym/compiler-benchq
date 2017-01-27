@@ -40,3 +40,7 @@ TwirlKeys.templateImports += "benchq.model._"
 
 // Adds additional packages into conf/routes
 // play.sbt.routes.RoutesKeys.routesImport += "org.scala-lang.binders._"
+
+maintainer in Linux := "Scala Team <scala-team@lightbend.com>"
+packageSummary in Linux := "Scala BenchQ"
+packageDescription := "Scala BenchQ"
