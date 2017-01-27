@@ -1,7 +1,7 @@
 package benchq
 package repo
 
-import benchq.queue.ScalaVersion
+import benchq.model.ScalaVersion
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.ws.{WSAuthScheme, WSClient}
 

@@ -6,8 +6,8 @@ import akka.testkit.TestProbe
 import benchq.git.GitRepo
 import benchq.influxdb.ResultsDb
 import benchq.jenkins.ScalaJenkins
-import benchq.model.KnownRevisionService
-import benchq.queue.Status._
+import benchq.model._
+import benchq.model.Status._
 import benchq.repo.ScalaBuildsRepo
 import com.softwaremill.macwire._
 import org.scalatest.BeforeAndAfterAll

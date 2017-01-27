@@ -1,6 +1,7 @@
 package benchq
 
-import benchq.queue.Status._
+import benchq.model.{Benchmark, CompilerBenchmarkTask, ScalaVersion, StatusCompanion}
+import benchq.model.Status._
 import benchq.queue._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play._

@@ -5,8 +5,8 @@ import akka.actor._
 import benchq.git.GitRepo
 import benchq.influxdb.ResultsDb
 import benchq.jenkins.ScalaJenkins
-import benchq.model.{Branch, KnownRevisionService}
-import benchq.queue.Status._
+import benchq.model.Status._
+import benchq.model._
 import benchq.repo.ScalaBuildsRepo
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -147,7 +147,7 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
               val task =
                 CompilerBenchmarkTask(
                   100,
-                  Status.CheckScalaVersionAvailable,
+                  model.Status.CheckScalaVersionAvailable,
                   ScalaVersion(newCommit, Nil)(None),
                   benchmarkService.defaultBenchmarks(knownRevision.branch))(None)
               compilerBenchmarkTaskService.insert(task)

@@ -1,7 +1,7 @@
 package benchq
 package jenkins
 
-import benchq.queue.{CompilerBenchmarkTask, ScalaVersion}
+import benchq.model._
 import benchq.repo.ScalaBuildsRepo
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.ws.{WSAuthScheme, WSClient}

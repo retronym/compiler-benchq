@@ -3,7 +3,7 @@ package benchq
 import benchq.git.GitRepo
 import benchq.influxdb.ResultsDb
 import benchq.jenkins.ScalaJenkins
-import benchq.model.KnownRevisionService
+import benchq.model._
 import benchq.queue._
 import benchq.repo.ScalaBuildsRepo
 import com.softwaremill.macwire._

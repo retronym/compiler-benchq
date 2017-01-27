@@ -2,8 +2,8 @@ package controllers
 
 import javax.inject._
 
-import benchq.queue.Status.Done
-import benchq.queue.{CompilerBenchmarkTaskService, StatusCompanion}
+import benchq.model.Status._
+import benchq.model._
 import play.api.mvc._
 import views._
 

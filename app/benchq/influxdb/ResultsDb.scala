@@ -1,13 +1,12 @@
 package benchq
 package influxdb
 
-import benchq.queue.{BenchmarkResult, CompilerBenchmarkTask}
+import benchq.model._
 import okhttp3.Interceptor.Chain
 import okhttp3._
 import org.influxdb.dto.Query
 import org.influxdb.dto.QueryResult.Series
 import org.influxdb.{InfluxDB, InfluxDBFactory}
-import play.api.Configuration
 
 import scala.collection.convert.decorateAsScala._
 import scala.concurrent.Future
