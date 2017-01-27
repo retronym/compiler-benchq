@@ -59,8 +59,6 @@ class Webhooks(taskQueue: TaskQueue) extends Controller {
           if (status == SuccessStr) Success(())
           else Failure(new Exception(s"Scala build failed: $url"))
         taskQueue.queueActor ! taskQueue.QueueActor.ScalaBuildFinished(taskId, res)
-        // TODO: find other builds waiting for the same scala version, there might be other
-        // builds in the queue waiting for this build to finish
 
       case _ =>
     }

@@ -90,12 +90,15 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
         ifSuccess(id, tryArtifactName) { (task, artifactName) =>
           val newStatus = artifactName match {
             case Some(artifact) =>
-              // TODO: pass on artifact name
+              // could pass on artifact name - currently we do another lookup in ScalaJenkins.startBenchmark
               StartBenchmark
             case None =>
-              // TODO: check if there's a task in the queue with StartScalaBuild or
-              // WaitForScalaBuild for the same scala version
-              StartScalaBuild
+              // Check if the Scala version is being built by some other task
+              val versionBeingBuilt = compilerBenchmarkTaskService
+                .byPriority(Set(StartScalaBuild, WaitForScalaBuild))
+                .exists(t => t.id != task.id && t.scalaVersion == task.scalaVersion)
+              if (versionBeingBuilt) WaitForScalaBuild
+              else StartScalaBuild
           }
           updateStatus(task, newStatus)
           self ! PingQueue
@@ -108,8 +111,12 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
 
       case ScalaBuildFinished(id, tryRes) =>
         ifSuccess(id, tryRes) { (task, _) =>
-          // TODO: extract artifact name, pass on to StartBenchmark, fail if not available
           updateStatus(task, StartBenchmark)
+          // Update other tasks that are waiting for this Scala version to be built
+          compilerBenchmarkTaskService
+            .byPriority(Set(WaitForScalaBuild))
+            .filter(_.scalaVersion == task.scalaVersion)
+            .foreach(task => updateStatus(task, StartBenchmark))
           self ! PingQueue
         }
 
