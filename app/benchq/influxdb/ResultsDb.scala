@@ -19,7 +19,7 @@ class ResultsDb(config: Config) {
     Future.successful(())
   }
 
-  // utilities for console interaction: `sbt console`, `scala> resultsDb.createDb()`
+  // utility for console interaction: `sbt console`, `scala> resultsDb.query(...)`
 
   def query(s: String): List[Series] = withConnection { conn =>
     val r = conn.query(new Query(s, influxDbName))

@@ -3,6 +3,7 @@ package benchq
 import benchq.git.GitRepo
 import benchq.influxdb.ResultsDb
 import benchq.jenkins.ScalaJenkins
+import benchq.model.KnownRevisionService
 import benchq.queue._
 import benchq.repo.ScalaBuildsRepo
 import com.softwaremill.macwire._
@@ -56,6 +57,7 @@ class BenchQComponents(context: Context)
   lazy val compilerBenchmarkTaskService: CompilerBenchmarkTaskService =
     wire[CompilerBenchmarkTaskService]
   lazy val benchmarkResultService: BenchmarkResultService = wire[BenchmarkResultService]
+  lazy val knownRevisionService: KnownRevisionService = wire[KnownRevisionService]
 
   lazy val homeController: HomeController = wire[HomeController]
 }

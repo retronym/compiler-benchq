@@ -3,8 +3,10 @@ package queue
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.testkit.TestProbe
+import benchq.git.GitRepo
 import benchq.influxdb.ResultsDb
 import benchq.jenkins.ScalaJenkins
+import benchq.model.KnownRevisionService
 import benchq.queue.Status._
 import benchq.repo.ScalaBuildsRepo
 import com.softwaremill.macwire._
@@ -49,27 +51,6 @@ class TaskQueueSpec extends PlaySpec with BeforeAndAfterAll {
     }
   }
 
-  class TestTaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
-                      benchmarkResultService: BenchmarkResultService,
-                      scalaBuildsRepo: ScalaBuildsRepo,
-                      scalaJenkins: ScalaJenkins,
-                      resultsDb: ResultsDb,
-                      system: ActorSystem)
-      extends TaskQueue(compilerBenchmarkTaskService,
-                        benchmarkResultService,
-                        scalaBuildsRepo,
-                        scalaJenkins,
-                        resultsDb,
-                        system) {
-    class TestQueueActor(probeActorRef: ActorRef) extends QueueActor {
-      override def receive: Receive = {
-        case msg: Any =>
-          super.receive(msg)
-          probeActorRef ! msg
-      }
-    }
-  }
-
   lazy val components = {
     val env = Environment.simple()
     val context = ApplicationLoader.createContext(env)
@@ -78,13 +59,22 @@ class TaskQueueSpec extends PlaySpec with BeforeAndAfterAll {
       override lazy val scalaBuildsRepo: ScalaBuildsRepo = wire[ScalaBuildsRepoMock]
       override lazy val scalaJenkins: ScalaJenkins = wire[ScalaJenkinsMock]
       override lazy val resultsDb: ResultsDb = wire[ResultsDbMock]
-      override lazy val taskQueue: TestTaskQueue = wire[TestTaskQueue]
     }
   }
   import components._
+  import taskQueue.QueueActor._
+
+  class TestQueueActor(probeActorRef: ActorRef) extends taskQueue.QueueActor {
+    override def receive: Receive = {
+      case msg: Any =>
+        super.receive(msg)
+        probeActorRef ! msg
+    }
+  }
+
   val probe = TestProbe()(actorSystem)
   val testActor =
-    actorSystem.actorOf(Props(new taskQueue.TestQueueActor(probe.ref)), "test-queue-actor")
+    actorSystem.actorOf(Props(new TestQueueActor(probe.ref)), "test-queue-actor")
 
   override def beforeAll(): Unit = {
     Evolutions.applyEvolutions(database)

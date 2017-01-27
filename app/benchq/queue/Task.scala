@@ -5,6 +5,7 @@ import java.sql.Connection
 
 import anorm.SqlParser._
 import anorm._
+import benchq.model.Branch
 import benchq.queue.Status._
 import play.api.db.Database
 
@@ -46,7 +47,7 @@ class ScalaVersionService(database: Database) {
           left join compilerOption as o on x.compilerOptionId = o.id
           where x.scalaVersionId = $id
           order by x.idx"""
-      .as(SqlParser.str("opt").*)
+      .as(str("opt").*)
   }
 
   def findById(id: Long): Option[ScalaVersion] = database.withConnection { implicit conn =>
@@ -71,6 +72,11 @@ class ScalaVersionService(database: Database) {
   }
 }
 
+// Could be simplified, for example just a long string with the name and arguments, or create a
+// unique name for each combination and keep the mapping to a specific benchmark implementation and
+// its arguments elsewhere, (in the compiler-benchmarks repo).
+// Keeping arguments here allows testing other combinations easily (for example custom compiler
+// flags, e.g., when testing a new feature).
 case class Benchmark(name: String, arguments: List[String])(val id: Option[Long])
 
 class BenchmarkService(database: Database) {
@@ -98,7 +104,7 @@ class BenchmarkService(database: Database) {
 
   private def argsForId(id: Long)(implicit conn: Connection): List[String] = {
     SQL"select arg, idx from benchmarkArgument where benchmarkId = $id order by idx asc"
-      .as(SqlParser.str("arg").*)
+      .as(str("arg").*)
   }
 
   def findById(id: Long): Option[Benchmark] = database.withConnection { implicit conn =>
@@ -116,6 +122,13 @@ class BenchmarkService(database: Database) {
   def delete(id: Long): Unit = database.withConnection { implicit conn =>
     // also deletes from benchmarkArgument, `cascade` foreign key constraint
     SQL"delete from benchmark where id = $id".executeUpdate()
+  }
+
+  def defaultBenchmarks(branch: Branch): List[Benchmark] = database.withConnection {
+    implicit conn =>
+      SQL"select benchmarkId from defaultBenchmark where branch = ${branch.entryName}"
+        .as(scalar[Long].*)
+        .flatMap(findById)
   }
 }
 
@@ -223,21 +236,16 @@ class CompilerBenchmarkTaskService(database: Database,
     }
   }
 
-  private val taskParser = {
-    import SqlParser._
-    long("id") ~ int("priority") ~ str("status") ~ long("scalaVersionId")
-  }
+  private val taskParser = long("id") ~ int("priority") ~ str("status") ~ long("scalaVersionId")
 
-  private val requestFailedFieldsParser = {
-    SqlParser.str("previousStatus") ~ SqlParser.str("message")
-  }
+  private val requestFailedFieldsParser = str("previousStatus") ~ str("message")
 
   private def getTasks(query: SimpleSql[Row]): List[CompilerBenchmarkTask] = {
     database.withConnection { implicit conn =>
       def benchmarks(taskId: Long): List[Benchmark] = {
         SQL"""select benchmarkId, idx from compilerBenchmarkTaskBenchmark
               where compilerBenchmarkTaskId = $taskId order by idx asc"""
-          .as(SqlParser.long("benchmarkId").*)
+          .as(long("benchmarkId").*)
           .map(benchmarkService.findById(_).get)
       }
 

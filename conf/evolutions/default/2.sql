@@ -42,5 +42,5 @@ create table compilerBenchmarkTaskBenchmark(
 drop table benchmark;
 drop table benchmarkArgument;
 drop table compilerBenchmarkTask;
-drop table requestFailedMessage;
+drop table requestFailedFields;
 drop table compilerBenchmarkTaskBenchmark;

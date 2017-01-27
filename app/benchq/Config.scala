@@ -30,4 +30,8 @@ class Config(config: Configuration) {
     val user = configString("scalaBuildsRepo.user")
     val password = configString("scalaBuildsRepo.password")
   }
+
+  object GitRepo {
+    val checkoutLocation = configString("gitRepo.checkoutLocation")
+  }
 }
