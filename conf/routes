@@ -3,6 +3,8 @@
 # https://www.playframework.com/documentation/latest/ScalaRouting
 # ~~~~
 
+# This doesn't work for the top-level url if `play.http.context` is set: `domain.com/appUrl/` is not
+# redirectoed to `domain.com/appUrl`. It works for other paths, e.g., `domain.com/appUrl/path/`.
 GET     /*path/                     controllers.HomeController.untrail(path: String)
 
 GET     /                           controllers.HomeController.index

@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject._
 
+import benchq.Config
 import benchq.model.Status._
 import benchq.model._
 import play.api.mvc._
@@ -12,14 +13,15 @@ import views._
  * application's home page.
  */
 @Singleton
-class HomeController(compilerBenchmarkTaskService: CompilerBenchmarkTaskService)
+class HomeController(compilerBenchmarkTaskService: CompilerBenchmarkTaskService, config: Config)
     extends Controller {
+  import config.Http._
 
   def untrail(path: String) = Action {
-    MovedPermanently(routes.HomeController.index().url + "/" + path)
+    MovedPermanently(externalUrlPrefix + "/" + path)
   }
 
-  val Home = Redirect(routes.HomeController.queue())
+  val Home = Redirect(reverseRoutePrefix + routes.HomeController.queue())
 
   def index = Action(Home)
 

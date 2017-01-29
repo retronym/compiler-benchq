@@ -1,5 +1,15 @@
 # https://www.playframework.com/documentation/latest/Configuration
 
+# Run `sbt playUpdateSecret`
+play.crypto.secret = "changeme"
+
+# The prefix under which the application is exposed by the reverse proxy. In this case
+# `play.http.context` has to be empty, but this setting should be defined.
+# app.proxyContext = "/benchq"
+
+# A global path under which play exposes this app.
+# play.http.context = ""
+
 play.application.loader = benchq.AppApplicationLoader
 
 db.default {
