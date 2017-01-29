@@ -15,6 +15,10 @@ import views._
 class HomeController(compilerBenchmarkTaskService: CompilerBenchmarkTaskService)
     extends Controller {
 
+  def untrail(path: String) = Action {
+    MovedPermanently(routes.HomeController.index().url + "/" + path)
+  }
+
   val Home = Redirect(routes.HomeController.queue())
 
   def index = Action(Home)

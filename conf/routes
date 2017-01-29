@@ -3,7 +3,8 @@
 # https://www.playframework.com/documentation/latest/ScalaRouting
 # ~~~~
 
-# An example controller showing a sample home page
+GET     /*path/                     controllers.HomeController.untrail(path: String)
+
 GET     /                           controllers.HomeController.index
 
 GET     /queue                      controllers.HomeController.queue
