@@ -24,6 +24,11 @@ class AppApplicationLoader extends ApplicationLoader {
     }
 
     val components = new BenchQComponents(context)
+    // Workaround to make reverse routing work with a prefix, see
+    // https://github.com/playframework/playframework/issues/4977#issuecomment-135486198
+    components.configuration
+      .getString("play.http.context")
+      .foreach(_root_.router.RoutesPrefix.setPrefix)
     components.applicationEvolutions // force the lazy val to ensure evolutions are applied
     components.application
   }
@@ -37,8 +42,11 @@ class BenchQComponents(context: Context)
     with AhcWSComponents {
   lazy val assets: Assets = wire[Assets]
   lazy val router: Router = {
-    lazy val prefix = "/"
-    wire[Routes]
+    // The default constructor of Routes takes a prefix, so it needs to be in scope. However, the
+    // call to `withPrefix` below is still necessary for the prefix to be picked up in reverse
+    // routes (often used for redirects)
+    lazy val prefix: String = httpConfiguration.context
+    wire[Routes].withPrefix(prefix)
   }
   lazy val database: Database = dbApi.database("default")
 
