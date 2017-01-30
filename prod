@@ -21,7 +21,10 @@ case ${1:-} in
       echo "No PID file: $pidFile"
     fi
     ;;
+  dba)
+    sbt "runMain org.h2.tools.Shell -url jdbc:h2:$DIR/target/universal/stage/sandbox/db"
+    ;;
   *)
-    echo "Usage: prod [start | stop]"
+    echo "Usage: prod [start | stop | dba]"
     ;;
 esac
