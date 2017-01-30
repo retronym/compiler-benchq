@@ -4,3 +4,4 @@ target
 /sandbox
 /RUNNING_PID
 /conf/application.conf
+/conf/logback.xml
