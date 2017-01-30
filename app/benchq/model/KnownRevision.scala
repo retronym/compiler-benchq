@@ -36,7 +36,7 @@ class KnownRevisionService(database: Database) {
               where branch = ${knownRevision.branch.entryName}""".executeUpdate()
       if (changedRows == 0)
         SQL"""insert into knownRevision
-              values (${knownRevision.revision}, ${knownRevision.branch.entryName})"""
+              values (${knownRevision.branch.entryName}, ${knownRevision.revision})"""
           .executeInsert()
   }
 }
