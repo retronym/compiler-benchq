@@ -12,6 +12,7 @@ class Webhooks(taskQueue: TaskQueue) extends Controller {
   val xGhEventHeader = "X-GitHub-Event"
 
   def github: Action[JsValue] = Action(parse.json) { implicit req =>
+    Logger.debug(s"Github webhook request: ${req.headers} - ${req.body}")
     req.headers
       .get(xGhEventHeader)
       .map({
@@ -20,22 +21,30 @@ class Webhooks(taskQueue: TaskQueue) extends Controller {
           val branchName = (req.body \ "ref").as[String].split('/').last
           Branch.withNameOption(branchName) match {
             case Some(branch) =>
+              Logger.info(s"Github webhook: push to $branch")
               taskQueue.checkNewCommitsActor ! taskQueue.CheckNewCommitsActor.Check(branch)
             case _ =>
-              Logger.debug(s"Push event to unknown branch $branchName")
+              Logger.info(s"Github webhook: push to unknown branch $branchName")
           }
           Ok
         case e =>
+          Logger.info(s"Github webhook: ignoring event $e")
           NotImplemented(s"Server does not handle webhook event $e")
       })
-      .getOrElse(BadRequest(s"Missing `$xGhEventHeader` header"))
+      .getOrElse({
+        Logger.info(s"Github webhook: no $xGhEventHeader header")
+        BadRequest(s"Missing `$xGhEventHeader` header")
+      })
   }
 
-  val BootstrapTask = """scala-2\.1\d\.x-integrate-bootstrap""".r
+  val BootstrapJobPattern = """scala-2\.1\d\.x-integrate-bootstrap""".r
+  val BenchmarkJobName = "compiler-benchmark"
   val SuccessStr = "SUCCESS"
   val FinalizedStr = "FINALIZED"
 
   def jenkins: Action[JsValue] = Action(parse.json) { implicit req =>
+    Logger.debug(s"Jenkins webhook request: ${req.body}")
+
     val name = (req.body \ "name").as[String]
     val phase = (req.body \ "build" \ "phase").as[String]
     val taskIdOpt =
@@ -47,21 +56,26 @@ class Webhooks(taskQueue: TaskQueue) extends Controller {
     def url = (req.body \ "build" \ "full_url").as[String]
 
     (name, phase, taskIdOpt) match {
-      case ("compiler-benchmark", FinalizedStr, Some(taskId)) =>
+      case (BenchmarkJobName, FinalizedStr, Some(taskId)) =>
         val result =
           if (status == SuccessStr) Success(Nil) // storing results is not yet implemented
           else
             Failure(new Exception(s"Benchmark job failed: $url"))
+        Logger.info(s"Jenkins webhook: $name finalized: $taskId - $result")
         taskQueue.queueActor ! taskQueue.QueueActor.BenchmarkFinished(taskId, result)
+        Ok
 
-      case (BootstrapTask(), FinalizedStr, Some(taskId)) =>
+      case (BootstrapJobPattern(), FinalizedStr, Some(taskId)) =>
         val res =
           if (status == SuccessStr) Success(())
           else Failure(new Exception(s"Scala build failed: $url"))
+        Logger.info(s"Jenkins webhook: $name finalized: $taskId - $res ")
         taskQueue.queueActor ! taskQueue.QueueActor.ScalaBuildFinished(taskId, res)
+        Ok
 
       case _ =>
+        Logger.info(s"Jenkins webhook: unknown event: $name - $phase - $taskIdOpt")
+        NotImplemented(s"Server does not handle notification: $name - $phase - $taskIdOpt")
     }
-    Ok
   }
 }

@@ -37,6 +37,7 @@ class GitRepo(config: Config) {
     fetchOrigin()
     val originPrefix = "origin/"
     Try {
+      // Throws an exception if `sha` is not known
       val containingBranches =
         Process(s"git branch -r --contains $sha", checkoutDirectoryJ).lineStream
           .map(_.trim)

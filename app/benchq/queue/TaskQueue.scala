@@ -152,6 +152,7 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
         knownRevisionService.lastKnownRevision(branch) match {
           case Some(knownRevision) =>
             val newCommits = gitRepo.newMergeCommitsSince(knownRevision)
+            Logger.info(s"Starting benchmarks for new commits in $branch: $newCommits")
             newCommits foreach { newCommit =>
               val task =
                 CompilerBenchmarkTask(

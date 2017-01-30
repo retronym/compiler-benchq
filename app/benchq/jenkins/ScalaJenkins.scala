@@ -4,6 +4,7 @@ package jenkins
 import benchq.git.GitRepo
 import benchq.model._
 import benchq.repo.ScalaBuildsRepo
+import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.ws.{WSAuthScheme, WSClient}
 import play.api.mvc.Results
@@ -47,6 +48,7 @@ class ScalaJenkins(ws: WSClient,
   def startScalaBuild(task: CompilerBenchmarkTask): Future[Unit] = {
     buildJobUrl(task.scalaVersion) match {
       case Success(Some(url)) =>
+        Logger.info(s"Starting Scala build for ${task.id} at $url")
         ws.url(url + "buildWithParameters")
           .withAuth(user, token, WSAuthScheme.BASIC)
           .withQueryString(buildJobParams(task): _*)
@@ -54,16 +56,16 @@ class ScalaJenkins(ws: WSClient,
           .map(_ => ())
 
       case Success(None) =>
-        Future.failed(
-          new Exception(
-            s"Could not start Scala build for ${task.scalaVersion.sha}, " +
-              s"the revision is not in a known branch: ${Branch.values.mkString(", ")}"))
+        val msg = s"Could not start Scala build for ${task.id}, ${task.scalaVersion.sha}, " +
+            s"the revision is not in a known branch: ${Branch.values.mkString(", ")}"
+        Logger.error(msg)
+        Future.failed(new Exception(msg))
 
       case Failure(e) =>
-        Future.failed(
-          new Exception(
-            s"Could not start Scala build for ${task.scalaVersion.sha}, " +
-              s"querying the git repo failed: ${e.getMessage}"))
+        val msg = s"Could not start Scala build for ${task.scalaVersion.sha}, " +
+            s"querying the git repo failed: ${e.getMessage}"
+        Logger.error(msg)
+        Future.failed(new Exception(msg))
     }
   }
 
@@ -85,13 +87,16 @@ class ScalaJenkins(ws: WSClient,
   def startBenchmark(task: CompilerBenchmarkTask): Future[Unit] = {
     scalaBuildsRepo.checkBuildAvailable(task.scalaVersion) flatMap {
       case Some(artifact) =>
+        Logger.info(s"Starting benchmark job for ${task.id} using $artifact")
         ws.url(host + "job/compiler-benchmark/buildWithParameters")
           .withAuth(user, token, WSAuthScheme.BASIC)
           .withQueryString(benchmarkJobParams(task, artifact): _*)
           .post(Results.EmptyContent())
           .map(_ => ())
       case None =>
-        throw new Exception(s"No Scala build found for ${task.scalaVersion}")
+        val msg = s"Could not start benchmark, no Scala build found for ${task.scalaVersion}"
+        Logger.error(msg)
+        throw new Exception(msg)
     }
   }
 }

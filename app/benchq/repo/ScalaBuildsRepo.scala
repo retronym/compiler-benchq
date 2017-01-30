@@ -2,6 +2,7 @@ package benchq
 package repo
 
 import benchq.model.ScalaVersion
+import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.ws.{WSAuthScheme, WSClient}
 
@@ -29,6 +30,7 @@ class ScalaBuildsRepo(ws: WSClient, config: Config) {
     //   }],
     //   "range": { "start_pos": 0, "end_pos": 1, "total": 1 }
     // }
+    Logger.info(s"Checking if Scala build is available for $scalaVersion")
     ws.url(host + "/search/aql")
       .withAuth(user, password, WSAuthScheme.BASIC)
       .post(searchQuery(scalaVersion))
