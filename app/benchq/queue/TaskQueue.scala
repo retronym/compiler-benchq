@@ -44,11 +44,17 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
       compilerBenchmarkTaskService.update(task.id.get, task.copy(status = newStatus)(None))
 
     def ifSuccess[T](id: Long, res: Try[T])(f: (CompilerBenchmarkTask, T) => Unit): Unit = {
-      for (task <- compilerBenchmarkTaskService.findById(id)) res match {
-        case Failure(e) =>
-          updateStatus(task, RequestFailed(task.status, e.getMessage))
-        case Success(t) =>
-          f(task, t)
+      compilerBenchmarkTaskService.findById(id) match {
+        case Some(task) => res match {
+          case Failure(e) =>
+            Logger.error(s"Action on task $id failed", e)
+            updateStatus(task, RequestFailed(task.status, e.getMessage))
+          case Success(t) =>
+            f(task, t)
+        }
+
+        case None =>
+          Logger.error(s"Could not find task for $id")
       }
     }
 
