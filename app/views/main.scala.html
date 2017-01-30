@@ -1,4 +1,4 @@
-@(content: Html)
+@(content: Html)(implicit revR: benchq.RevRouteFix)
 
 <!DOCTYPE html>
 <html>
@@ -9,8 +9,8 @@
 
         <title>Benchmark Queue</title>
 
-        <link rel="stylesheet" href='@routes.Assets.versioned("lib/bootstrap/css/bootstrap.min.css")'>
-        <link rel="stylesheet" href='@routes.Assets.versioned("stylesheets/main.css")'>
+        <link rel="stylesheet" href='@revR(routes.Assets.versioned("lib/bootstrap/css/bootstrap.min.css"))'>
+        <link rel="stylesheet" href='@revR(routes.Assets.versioned("stylesheets/main.css"))'>
     </head>
     <body>
         <nav class="navbar navbar-default">
@@ -21,13 +21,13 @@
                         <span class="icon-bar"></span>
                         <span class="icon-bar"></span>
                     </button>
-                    <a class="navbar-brand" href="@routes.HomeController.index">BenchQ</a>
+                    <a class="navbar-brand" href="@revR(routes.HomeController.index)">BenchQ</a>
                 </div>
 
                 <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
                     <ul class="nav navbar-nav">
-                        <li @*class="active"*@><a href="@routes.HomeController.queue">Queue</a></li>
-                        <li><a href="@routes.HomeController.branches">Branches</a></li>
+                        <li @*class="active"*@><a href="@revR(routes.HomeController.queue)">Queue</a></li>
+                        <li><a href="@revR(routes.HomeController.branches)">Branches</a></li>
                         <li><a href="#">Benchmarks</a></li>
                     </ul>
                 </div>
@@ -39,8 +39,8 @@
             @content
         </div>
 
-        <script src='@routes.Assets.versioned("lib/jquery/jquery.js")' type="text/javascript"></script>
-        <script src='@routes.Assets.versioned("lib/bootstrap/js/bootstrap.min.js")' type="text/javascript"></script>
-        <script src='@routes.Assets.versioned("javascripts/main.js")' type="text/javascript"></script>
+        <script src='@revR(routes.Assets.versioned("lib/jquery/jquery.js"))' type="text/javascript"></script>
+        <script src='@revR(routes.Assets.versioned("lib/bootstrap/js/bootstrap.min.js"))' type="text/javascript"></script>
+        <script src='@revR(routes.Assets.versioned("javascripts/main.js"))' type="text/javascript"></script>
     </body>
 </html>

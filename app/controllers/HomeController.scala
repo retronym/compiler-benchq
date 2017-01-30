@@ -23,7 +23,7 @@ class HomeController(config: Config,
     MovedPermanently(externalUrlPrefix + "/" + path)
   }
 
-  val Home = Redirect(reverseRoutePrefix + routes.HomeController.queue())
+  val Home = Redirect(revR(routes.HomeController.queue()))
 
   def index = Action(Home)
 

@@ -1,6 +1,11 @@
 package benchq
 
 import play.api.Configuration
+import play.api.mvc.Call
+
+abstract class RevRouteFix {
+  def apply(s: Call): String
+}
 
 class Config(config: Configuration) {
   private def configString(path: String): String =
@@ -10,6 +15,10 @@ class Config(config: Configuration) {
 
   object Http {
     private def nonEmpty(c: String) = c != "" && c != "/"
+
+    implicit object revR extends RevRouteFix {
+      def apply(s: Call): String = reverseRoutePrefix + s.toString
+    }
 
     /**
      * A prefix that should be added to reverse routes to get a valid path. If a prefix is set by
