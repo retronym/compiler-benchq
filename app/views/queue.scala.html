@@ -4,27 +4,29 @@
     <h1>Benchmark Queue</h1>
 
     @if(tasks.nonEmpty) {
-        <div id="queue">
-            <table>
-                <thead>
+        <table class="table table-hover table-striped">
+            <thead>
+                <tr>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Scala Version</th>
+                    <th>Benchmarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                @tasks.map { task =>
                     <tr>
-                        <th>Priority</th>
-                        <th>Status</th>
-                        <th>Scala Version</th>
-                        <th>Benchmarks</th>
+                        <td>@task.priority</td>
+                        <td>@task.status</td>
+                        <td>@task.scalaVersion</td>
+                        <td>@task.benchmarks</td>
                     </tr>
-                </thead>
-                <tbody>
-                    @tasks.map { task =>
-                        <tr>
-                            <td>@task.priority</td>
-                            <td>@task.status</td>
-                            <td>@task.scalaVersion</td>
-                            <td>@task.benchmarks</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+                }
+            </tbody>
+        </table>
+    } else {
+        <div class="well">
+            <em>Queue is empty.</em>
         </div>
     }
 }

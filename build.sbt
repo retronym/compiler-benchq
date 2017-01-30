@@ -17,6 +17,7 @@ libraryDependencies ++= List(
   "com.softwaremill.macwire" %% "macros"             % "2.2.5"  % "provided",
   "com.beachape"             %% "enumeratum"         % "1.5.6",
   "com.github.pathikrit"     %% "better-files"       % "2.17.1",
+  "com.adrianhurt"           %% "play-bootstrap"     % "1.1-P25-B3",
   "org.scalatestplus.play"   %% "scalatestplus-play" % "1.5.1"  % Test,
   "com.typesafe.akka"        %% "akka-testkit"       % "2.4.12" % Test)
 

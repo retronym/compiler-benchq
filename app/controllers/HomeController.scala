@@ -13,7 +13,9 @@ import views._
  * application's home page.
  */
 @Singleton
-class HomeController(compilerBenchmarkTaskService: CompilerBenchmarkTaskService, config: Config)
+class HomeController(config: Config,
+                     compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
+                     knownRevisionService: KnownRevisionService)
     extends Controller {
   import config.Http._
 
@@ -25,7 +27,13 @@ class HomeController(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
 
   def index = Action(Home)
 
-  def queue() = Action { implicit request =>
+  def queue = Action { implicit request =>
     Ok(html.queue(compilerBenchmarkTaskService.byPriority(StatusCompanion.allCompanions - Done)))
+  }
+
+  def branches = Action { implicit request =>
+    val branches = Branch.values.toList.sortBy(_.entryName)
+    Ok(html.branches(branches.map(b =>
+      (b, knownRevisionService.lastKnownRevision(b).map(_.revision)))))
   }
 }

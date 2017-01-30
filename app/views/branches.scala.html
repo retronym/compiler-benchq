@@ -1,0 +1,24 @@
+@(branches: List[(Branch, Option[String])])
+
+@import b3.vertical.fieldConstructor
+
+@main {
+    <h1>Known Branches</h1>
+
+    <table class="table table-hover table-striped">
+        <thead>
+        <tr>
+            <th>Branch</th>
+            <th>Last known revision</th>
+        </tr>
+        </thead>
+        <tbody>
+        @branches.map { case (branch, shaOpt) =>
+            <tr>
+                <td>@branch.entryName</td>
+                <td>@shaOpt.getOrElse("")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
