@@ -29,7 +29,7 @@ class GitRepo(config: Config) {
     // --first-parent to pick only merge commits, and direct commits to the branch
     // http://stackoverflow.com/questions/10248137/git-how-to-list-commits-on-this-branch-but-not-from-merged-branches
     Process(
-      s"git log --first-parent --pretty=format:'%H' ${knownRevision.revision}..origin/${knownRevision.branch.entryName}",
+      s"git log --first-parent --pretty=format:%H ${knownRevision.revision}..origin/${knownRevision.branch.entryName}",
       checkoutDirectoryJ).lineStream.toList
   }
 
