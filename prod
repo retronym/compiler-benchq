@@ -12,7 +12,7 @@ cd $DIR
 
 case ${1:-} in
   start)
-    sbt 'start -Dhttp.port=8084 -Dplay.evolutions.db.default.autoApply=true'
+    sbt clean 'start -Dhttp.port=8084 -Dplay.evolutions.db.default.autoApply=true'
     ;;
   stop)
     if [[ -e $pidFile ]]; then
