@@ -6,7 +6,9 @@ import anorm._
 import enumeratum._
 import play.api.db.Database
 
-sealed abstract class Branch(override val entryName: String) extends EnumEntry
+sealed abstract class Branch(override val entryName: String) extends EnumEntry {
+  override def toString = entryName
+}
 
 object Branch extends Enum[Branch] {
   val values = findValues

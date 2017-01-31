@@ -94,6 +94,7 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
 
       case ScalaVersionAvailable(id, tryArtifactName) =>
         ifSuccess(id, tryArtifactName) { (task, artifactName) =>
+          Logger.info(s"Search result for Scala build of ${task.scalaVersion}: $artifactName")
           val newStatus = artifactName match {
             case Some(artifact) =>
               // could pass on artifact name - currently we do another lookup in ScalaJenkins.startBenchmark
@@ -113,10 +114,13 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
       case ScalaBuildStarted(id, tryRes) =>
         // If the build cannot be started, mark the task as RequestFailed. Otherwise wait for
         // the `ScalaBuildFinished` message triggered by the Jenkins webhook.
-        ifSuccess(id, tryRes)((_, _) => ())
+        ifSuccess(id, tryRes)((task, _) => {
+          Logger.info(s"Started Scala build for task ${task.id}")
+        })
 
       case ScalaBuildFinished(id, tryRes) =>
         ifSuccess(id, tryRes) { (task, _) =>
+          Logger.info(s"Scala build finished for task ${task.id}")
           updateStatus(task, StartBenchmark)
           // Update other tasks that are waiting for this Scala version to be built
           compilerBenchmarkTaskService
@@ -129,10 +133,13 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
       case BenchmarkStarted(id, tryRes) =>
         // If the benchmark cannot be started, mark the task as RequestFailed. Otherwise wait for
         // the `BenchmarkFinished` message triggered by the Benchmark runner.
-        ifSuccess(id, tryRes)((_, _) => ())
+        ifSuccess(id, tryRes)((task, _) => {
+          Logger.info(s"Started benchmark job for task ${task.id}")
+        })
 
       case BenchmarkFinished(id, tryResults) =>
         ifSuccess(id, tryResults) { (task, results) =>
+          Logger.info(s"Benchmark job finished for task ${task.id}")
           benchmarkResultService.insertResults(results)
           updateStatus(task, SendResults)
           self ! PingQueue
@@ -168,8 +175,10 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
                   benchmarkService.defaultBenchmarks(knownRevision.branch))(None)
               compilerBenchmarkTaskService.insert(task)
             }
-            if (newCommits.nonEmpty)
+            if (newCommits.nonEmpty) {
+              knownRevisionService.updateOrInsert(knownRevision.copy(revision = newCommits.head))
               queueActor ! QueueActor.PingQueue
+            }
 
           case None =>
             Logger.error(s"Could not find last known revision for branch ${branch.entryName}")
