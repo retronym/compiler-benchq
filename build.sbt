@@ -37,7 +37,7 @@ initialCommands in Compile in console :=
     |def q = Play.stop(application)
   """.stripMargin
 
-TwirlKeys.templateImports += "benchq.model._"
+TwirlKeys.templateImports ++= List("benchq.model._", "benchq.RevRouteFix", "play.api.mvc.Flash")
 
 // Adds additional packages into conf/routes
 // play.sbt.routes.RoutesKeys.routesImport += "org.scala-lang.binders._"

@@ -20,6 +20,7 @@ import views._
 class HomeController(config: Config,
                      compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
                      knownRevisionService: KnownRevisionService,
+                     benchmarkService: BenchmarkService,
                      val messagesApi: MessagesApi)
     extends Controller
     with I18nSupport {
@@ -77,5 +78,9 @@ class HomeController(config: Config,
         }
       }
     )
+  }
+
+  def benchmarks() = Action { implicit request =>
+    Ok(html.benchmarks(benchmarkService.all()))
   }
 }

@@ -1,0 +1,32 @@
+@(benchmarks: List[Benchmark])(implicit revR: RevRouteFix, flash: Flash)
+
+@main {
+    <h1>Benchmarks</h1>
+
+    <table class="table table-hover table-striped">
+        <thead>
+        <tr>
+            <th>Name</th>
+            <th>Arguments</th>
+            <th>
+                <a class="btn btn-success btn-sm" href="#" role="button">
+                    <span class="glyphicon glyphicon-plus"/>
+                </a>
+            </th>
+        </tr>
+        </thead>
+        <tbody>
+            @benchmarks.map { b =>
+                <tr>
+                    <td>@b.name</td>
+                    <td>@b.arguments.mkString(", ")</td>
+                    <td>
+                        <a class="btn btn-default btn-sm" href="#" role="button">
+                            <span class="glyphicon glyphicon-pencil"/>
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

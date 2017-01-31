@@ -1,4 +1,4 @@
-@(content: Html)(implicit revR: benchq.RevRouteFix)
+@(content: Html)(implicit revR: RevRouteFix)
 
 <!DOCTYPE html>
 <html>
@@ -28,7 +28,7 @@
                     <ul class="nav navbar-nav">
                         <li @*class="active"*@><a href="@revR(routes.HomeController.queue())">Queue</a></li>
                         <li><a href="@revR(routes.HomeController.branches)">Branches</a></li>
-                        <li><a href="#">Benchmarks</a></li>
+                        <li><a href="@revR(routes.HomeController.benchmarks)">Benchmarks</a></li>
                     </ul>
                 </div>
             </div>

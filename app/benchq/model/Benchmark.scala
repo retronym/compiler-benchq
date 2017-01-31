@@ -54,6 +54,16 @@ class BenchmarkService(database: Database) {
       .map(id => Benchmark(name, argsForId(id))(Some(id)))
   }
 
+  val benchmarkParser = long("id") ~ str("name")
+
+  def all(): List[Benchmark] = database.withConnection { implicit conn =>
+    SQL"select * from benchmark"
+      .as(benchmarkParser.*)
+      .map {
+        case id ~ name => Benchmark(name, argsForId(id))(Some(id))
+      }
+  }
+
   def delete(id: Long): Unit = database.withConnection { implicit conn =>
     // also deletes from benchmarkArgument, `cascade` foreign key constraint
     SQL"delete from benchmark where id = $id".executeUpdate()
