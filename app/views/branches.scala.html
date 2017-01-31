@@ -1,15 +1,26 @@
-@(branches: List[(Branch, Option[String])])(implicit revR: benchq.RevRouteFix)
-
-@import b3.vertical.fieldConstructor
+@(branches: List[(Branch, Option[String])])(implicit revR: benchq.RevRouteFix, flash: play.api.mvc.Flash)
 
 @main {
-    <h1>Known Branches</h1>
+    <h1>Last known revisions</h1>
+
+    @flash.get("success").map { message =>
+        <div class="alert alert-success" role="alert">
+            <strong>Done!</strong> @message
+        </div>
+    }
+
+    @flash.get("failure").map { message =>
+        <div class="alert alert-danger" role="alert">
+            <strong>Error!</strong> @message
+        </div>
+    }
 
     <table class="table table-hover table-striped">
         <thead>
         <tr>
             <th>Branch</th>
             <th>Last known revision</th>
+            <th/>
         </tr>
         </thead>
         <tbody>
@@ -17,6 +28,11 @@
             <tr>
                 <td>@branch.entryName</td>
                 <td>@shaOpt.getOrElse("")</td>
+                <td>
+                    <a class="btn btn-default btn-sm" href="@revR(routes.HomeController.editKnownRevision(branch.entryName))" role="button">
+                        <span class="glyphicon glyphicon-pencil"/>
+                    </a>
+                </td>
             </tr>
         }
         </tbody>

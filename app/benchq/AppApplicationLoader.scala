@@ -12,6 +12,7 @@ import play.api.ApplicationLoader.Context
 import play.api._
 import play.api.db.evolutions.EvolutionsComponents
 import play.api.db.{DBComponents, Database, HikariCPComponents}
+import play.api.i18n.I18nComponents
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.routing.Router
 import router.Routes
@@ -39,7 +40,8 @@ class BenchQComponents(context: Context)
     with DBComponents
     with HikariCPComponents
     with EvolutionsComponents
-    with AhcWSComponents {
+    with AhcWSComponents
+    with I18nComponents {
   lazy val assets: Assets = wire[Assets]
   lazy val router: Router = {
     // The default constructor of Routes takes a prefix, so it needs to be in scope. However, the

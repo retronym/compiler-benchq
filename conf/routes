@@ -10,7 +10,10 @@ GET     /*path/                     controllers.HomeController.untrail(path: Str
 GET     /                           controllers.HomeController.index
 
 GET     /queue                      controllers.HomeController.queue
+
 GET     /branches                   controllers.HomeController.branches
+GET     /branches/:branch           controllers.HomeController.editKnownRevision(branch: String)
+POST    /branches/:branch           controllers.HomeController.updateKnownRevision(branch: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
