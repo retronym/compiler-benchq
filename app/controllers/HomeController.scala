@@ -33,8 +33,10 @@ class HomeController(config: Config,
 
   def index = Action(RQueue)
 
-  def queue = Action { implicit request =>
-    Ok(html.queue(compilerBenchmarkTaskService.byPriority(StatusCompanion.allCompanions - Done)))
+  def queue(showDone: Boolean = false) = Action { implicit request =>
+    val inProgress = compilerBenchmarkTaskService.byPriority(StatusCompanion.allCompanions - Done)
+    val done = if (showDone) Some(compilerBenchmarkTaskService.byPriority(Set(Done))) else None
+    Ok(html.queue(inProgress, done))
   }
 
   val RBranches = Redirect(revR(routes.HomeController.branches()))

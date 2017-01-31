@@ -9,7 +9,7 @@ GET     /*path/                     controllers.HomeController.untrail(path: Str
 
 GET     /                           controllers.HomeController.index
 
-GET     /queue                      controllers.HomeController.queue
+GET     /queue                      controllers.HomeController.queue(showDone: Boolean ?= false)
 
 GET     /branches                   controllers.HomeController.branches
 GET     /branches/:branch           controllers.HomeController.editKnownRevision(branch: String)

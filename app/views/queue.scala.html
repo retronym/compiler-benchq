@@ -1,32 +1,44 @@
-@(tasks: List[CompilerBenchmarkTask])(implicit revR: benchq.RevRouteFix)
+@(tasks: List[CompilerBenchmarkTask], done: Option[List[CompilerBenchmarkTask]])(implicit revR: benchq.RevRouteFix)
+
+@taskTable(ts: List[CompilerBenchmarkTask]) = {
+<table class="table table-hover table-striped">
+    <thead>
+    <tr>
+        <th>Priority</th>
+        <th>Status</th>
+        <th>Scala Version</th>
+        <th>Benchmarks</th>
+    </tr>
+    </thead>
+    <tbody>
+        @ts.map { t =>
+            <tr>
+                <td>@t.priority</td>
+                <td>@t.status</td>
+                <td>@t.scalaVersion</td>
+                <td>@t.benchmarks</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+}
 
 @main {
     <h1>Benchmark Queue</h1>
 
     @if(tasks.nonEmpty) {
-        <table class="table table-hover table-striped">
-            <thead>
-                <tr>
-                    <th>Priority</th>
-                    <th>Status</th>
-                    <th>Scala Version</th>
-                    <th>Benchmarks</th>
-                </tr>
-            </thead>
-            <tbody>
-                @tasks.map { task =>
-                    <tr>
-                        <td>@task.priority</td>
-                        <td>@task.status</td>
-                        <td>@task.scalaVersion</td>
-                        <td>@task.benchmarks</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        @taskTable(tasks)
     } else {
         <div class="well">
             <em>Queue is empty.</em>
         </div>
+    }
+
+    @done.fold {
+        <a class="btn btn-default" href="@revR(routes.HomeController.queue(true))" role="button">Show Completed</a>
+    } { ts =>
+        <h3>Completed Tasks</h3>
+        @taskTable(ts)
     }
 }
