@@ -4,7 +4,7 @@
 
 @main {
     <h1>Edit last known revision</h1>
-    @b3.form(routes.HomeController.updateKnownRevision(branch)) {
+    @b3.form(revR.call(routes.HomeController.updateKnownRevision(branch))) {
         <!-- play-bootstrap pushes the validation pattern to the client (html5 form validation).
              Chrome shows the content of the "title" attribute in the error message. -->
         @b3.text(f("revision"), '_label -> s"Branch $branch", 'title -> "Not a valid sha")

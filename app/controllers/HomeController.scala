@@ -48,8 +48,8 @@ class HomeController(config: Config,
   }
 
   // patterns are pushed to the client (html5 form validation), thanks play-bootstrap!
-  val revisionForm = Form(
-    Forms.single("revision" -> nonEmptyText.verifying(
+  val revisionForm: Form[String] = Form(
+    single("revision" -> nonEmptyText.verifying(
       Constraints.pattern("[0-9a-f]{40}".r, error = "Not a valid sha"))))
 
   def editKnownRevision(branch: String) = Action {

@@ -4,7 +4,8 @@ import play.api.Configuration
 import play.api.mvc.Call
 
 abstract class RevRouteFix {
-  def apply(s: Call): String
+  def apply(c: Call): String
+  def call(c: Call): Call
 }
 
 class Config(config: Configuration) {
@@ -17,7 +18,8 @@ class Config(config: Configuration) {
     private def nonEmpty(c: String) = c != "" && c != "/"
 
     implicit object revR extends RevRouteFix {
-      def apply(s: Call): String = reverseRoutePrefix + s.toString
+      def apply(c: Call): String = reverseRoutePrefix + c.toString
+      def call(c: Call): Call = c.copy(url = reverseRoutePrefix + c.url)
     }
 
     /**
