@@ -12,7 +12,8 @@ import play.api.db.Database
 // its arguments elsewhere, (in the compiler-benchmarks repo).
 // Keeping arguments here allows testing other combinations easily (for example custom compiler
 // flags, e.g., when testing a new feature).
-case class Benchmark(name: String, arguments: List[String])(val id: Option[Long])
+case class Benchmark(name: String, arguments: List[String], defaultBranches: List[Branch])(
+    val id: Option[Long])
 
 class BenchmarkService(database: Database) {
 
@@ -25,6 +26,9 @@ class BenchmarkService(database: Database) {
         .executeInsert(scalar[Long].single)
       for ((arg, idx) <- benchmark.arguments.iterator.zipWithIndex)
         SQL"insert into benchmarkArgument values ($id, $arg, $idx)"
+          .executeInsert()
+      for (b <- benchmark.defaultBranches)
+        SQL"insert into defaultBenchmark (branch, benchmarkId) values (${b.entryName}, $id)"
           .executeInsert()
       id
     }
@@ -42,16 +46,22 @@ class BenchmarkService(database: Database) {
       .as(str("arg").*)
   }
 
+  private def defaultBranchesFor(id: Long)(implicit conn: Connection): List[Branch] = {
+    SQL"select branch from defaultBenchmark where benchmarkId = $id order by branch asc"
+      .as(scalar[String].*)
+      .map(Branch.withName)
+  }
+
   def findById(id: Long): Option[Benchmark] = database.withConnection { implicit conn =>
     SQL"select name from benchmark where id = $id"
       .as(scalar[String].singleOpt)
-      .map(Benchmark(_, argsForId(id))(Some(id)))
+      .map(Benchmark(_, argsForId(id), defaultBranchesFor(id))(Some(id)))
   }
 
   def findByName(name: String): List[Benchmark] = database.withConnection { implicit conn =>
     SQL"select id from benchmark where name = $name"
       .as(scalar[Long].*)
-      .map(id => Benchmark(name, argsForId(id))(Some(id)))
+      .map(id => Benchmark(name, argsForId(id), defaultBranchesFor(id))(Some(id)))
   }
 
   val benchmarkParser = long("id") ~ str("name")
@@ -60,7 +70,7 @@ class BenchmarkService(database: Database) {
     SQL"select * from benchmark"
       .as(benchmarkParser.*)
       .map {
-        case id ~ name => Benchmark(name, argsForId(id))(Some(id))
+        case id ~ name => Benchmark(name, argsForId(id), defaultBranchesFor(id))(Some(id))
       }
   }
 

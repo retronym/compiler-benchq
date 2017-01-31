@@ -1,8 +1,7 @@
 package benchq
 
-import benchq.model.{Benchmark, CompilerBenchmarkTask, ScalaVersion, StatusCompanion}
 import benchq.model.Status._
-import benchq.queue._
+import benchq.model._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play._
 import play.api._
@@ -26,13 +25,14 @@ class ModelSpec extends PlaySpec with BeforeAndAfterAll {
   val v2_12_1_noForw = v2_12_1.copy(compilerOptions = List("-Xmixin-force-forwarders:junit"))(None)
 
   val hotBetter =
-    Benchmark("scala.tools.nsc.HotScalacBenchmark", List("source=better-files"))(None)
+    Benchmark("scala.tools.nsc.HotScalacBenchmark",
+              List("source=better-files"),
+              Branch.sortedValues)(None)
   val hotBetterNoForw = hotBetter.copy(
     arguments = hotBetter.arguments ::: List("extraArgs=-Xmixin-force-forwarders:junit"))(None)
 
   val task1 =
-    CompilerBenchmarkTask(1, WaitForScalaBuild, v2_12_0, List(hotBetter, hotBetterNoForw))(
-      None)
+    CompilerBenchmarkTask(1, WaitForScalaBuild, v2_12_0, List(hotBetter, hotBetterNoForw))(None)
   val task2 = task1.copy(scalaVersion = v2_12_1)(None)
   val task3 = task1.copy(scalaVersion = v2_12_1_noForw)(None)
   val task4 = task1.copy(priority = 10, status = StartBenchmark)(None)
@@ -85,8 +85,8 @@ class ModelSpec extends PlaySpec with BeforeAndAfterAll {
       queryOpts mustBe empty
     }
 
-    "delete Benchmark and their arguments" in {
-      val b = Benchmark("name", List("testArg1", "testArg2"))(None)
+    "delete Benchmark and their arguments, defaults" in {
+      val b = Benchmark("name", List("testArg1", "testArg2"), Branch.sortedValues)(None)
       val id = benchmarkService.getIdOrInsert(b)
 
       def queryOpts = toolDb.query(s"select * from benchmarkArgument where benchmarkId = $id")
@@ -98,6 +98,8 @@ class ModelSpec extends PlaySpec with BeforeAndAfterAll {
 
       benchmarkService.findById(id) mustBe empty
       queryOpts mustBe empty
+
+      toolDb.query(s"select * from defaultBenchmark where benchmarkId = $id") mustBe empty
     }
 
     "update and delete benchmark tasks" in {
@@ -106,7 +108,8 @@ class ModelSpec extends PlaySpec with BeforeAndAfterAll {
       compilerBenchmarkTaskService.findById(taskId) mustEqual Some(task4)
 
       // update status
-      val withRequestFailed = task4.copy(status = RequestFailed(StartBenchmark, "could not start benchmark"))(None)
+      val withRequestFailed =
+        task4.copy(status = RequestFailed(StartBenchmark, "could not start benchmark"))(None)
       compilerBenchmarkTaskService.update(taskId, withRequestFailed)
       compilerBenchmarkTaskService.findById(taskId) mustEqual Some(withRequestFailed)
 
@@ -116,8 +119,7 @@ class ModelSpec extends PlaySpec with BeforeAndAfterAll {
       compilerBenchmarkTaskService.findById(taskId) mustEqual Some(withWait)
       // removes fields of the `RequestFailed` status
       toolDb
-        .query(
-          s"select * from requestFailedFields where compilerBenchmarkTaskId = $taskId")
+        .query(s"select * from requestFailedFields where compilerBenchmarkTaskId = $taskId")
         .mustBe(empty)
 
       // delete task

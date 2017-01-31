@@ -43,8 +43,7 @@ class HomeController(config: Config,
   val RBranches = Redirect(revR(routes.HomeController.branches()))
 
   def branches = Action { implicit request =>
-    val branches = Branch.values.toList.sortBy(_.entryName)
-    Ok(html.branches(branches.map(b =>
+    Ok(html.branches(Branch.sortedValues.map(b =>
       (b, knownRevisionService.lastKnownRevision(b).map(_.revision)))))
   }
 

@@ -45,11 +45,7 @@ class GitRepo(config: Config) {
             case s if s.startsWith(originPrefix) => s.substring(originPrefix.length)
           })
           .toSet
-      Branch.values
-        .filter(b => containingBranches(b.entryName))
-        .toList
-        .sortBy(_.entryName)
-        .headOption
+      Branch.sortedValues.find(b => containingBranches(b.entryName))
     }
   }
 }

@@ -12,6 +12,7 @@ sealed abstract class Branch(override val entryName: String) extends EnumEntry {
 
 object Branch extends Enum[Branch] {
   val values = findValues
+  val sortedValues = values.toList.sortBy(_.entryName)
   case object v2_11_x extends Branch("2.11.x")
   case object v2_12_x extends Branch("2.12.x")
   case object v2_13_x extends Branch("2.13.x")
