@@ -65,7 +65,7 @@ class HomeController(config: Config,
 
   def defaultTaskValues =
     CompilerBenchmarkTask(100,
-                          benchq.model.Status.initial,
+                          initial,
                           ScalaVersion("", Nil)(None),
                           benchmarkService.defaultBenchmarks(Branch.v2_12_x))(None)
 
@@ -82,7 +82,37 @@ class HomeController(config: Config,
         RTasks.flashing("success" -> s"Task added to queue")
       }
     )
+  }
 
+  def editTask(id: Long) = Action { implicit request =>
+    compilerBenchmarkTaskService.findById(id) match {
+      case Some(t) => Ok(html.taskEdit(t))
+      case None => RTasks.flashing("failure" -> s"Task not found: $id")
+    }
+  }
+
+  def updateTask(id: Long) = Action { implicit request =>
+    def t = compilerBenchmarkTaskService.findById(id).get
+    request.body.asFormUrlEncoded.flatMap(_.get("action")).flatMap(_.headOption) match {
+      case Some("Use as Template") =>
+        Ok(html.taskNew(taskForm.fill(t), allBenchmarksById))
+
+      case Some("Mark Done") =>
+        compilerBenchmarkTaskService.update(id, t.copy(status = Done)(None))
+        RTasks.flashing("success" -> s"Task $id marked done")
+
+      case Some("Restart") =>
+        compilerBenchmarkTaskService.update(id, t.copy(status = initial)(None))
+        taskQueue.queueActor ! taskQueue.QueueActor.PingQueue
+        RTasks.flashing("success" -> s"Task $id restarted")
+
+      case Some("Delete") =>
+        compilerBenchmarkTaskService.delete(id)
+        RTasks.flashing("success" -> s"Task $id deleted")
+
+      case _ =>
+        RTasks.flashing("failure" -> s"Unknown action for task $id")
+    }
   }
 
   val RBranches = Redirect(revR(routes.HomeController.branches()))

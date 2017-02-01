@@ -1,40 +1,12 @@
 @(tasks: List[CompilerBenchmarkTask], done: Option[List[CompilerBenchmarkTask]])(implicit revR: RevRouteFix, flash: Flash)
 
-@taskTable(ts: List[CompilerBenchmarkTask]) = {
-<table class="table table-hover table-striped">
-    <thead>
-    <tr>
-        <th>Id</th>
-        <th>Priority</th>
-        <th>Status</th>
-        <th>Scala version</th>
-        <th>Benchmarks</th>
-    </tr>
-    </thead>
-    <tbody>
-        @ts.map { t =>
-            <tr>
-                <td>@t.id</td>
-                <td>@t.priority</td>
-                <td>@t.status</td>
-                <td>@t.scalaVersion</td>
-                <td>@t.benchmarks.mkString("\n")</td>
-            </tr>
-        }
-    </tbody>
-</table>
-
-}
-
 @main {
     <h1>Benchmark Tasks</h1>
 
     @flashes()
 
-    <p><a class="btn btn-success" href="@revR(routes.HomeController.newTask)" role="button">Add a Task</a></p>
-
     @if(tasks.nonEmpty) {
-        @taskTable(tasks)
+        @taskTable(tasks, true, true)
     } else {
         <div class="well">
             <em>Task queue is empty.</em>
@@ -45,6 +17,6 @@
         <a class="btn btn-default" href="@revR(routes.HomeController.tasks(true))" role="button">Show Completed</a>
     } { ts =>
         <h3>Completed Tasks</h3>
-        @taskTable(ts)
+        @taskTable(ts, false, true)
     }
 }

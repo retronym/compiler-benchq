@@ -1,0 +1,38 @@
+@(ts: List[CompilerBenchmarkTask], showAdd: Boolean, showEdit: Boolean)(implicit revR: RevRouteFix)
+
+<table class="table table-hover table-striped">
+    <thead>
+    <tr>
+        <th>Id</th>
+        <th>Priority</th>
+        <th>Status</th>
+        <th>Scala version</th>
+        <th>Benchmarks</th>
+        @if(showAdd || showEdit) { <th>
+            @if(showAdd) {
+                <a class="btn btn-success btn-sm" href="@revR(routes.HomeController.newTask)" role="button">
+                    <span class="glyphicon glyphicon-plus"/>
+                </a>
+            }
+        </th> }
+    </tr>
+    </thead>
+    <tbody>
+        @ts.map { t =>
+            <tr>
+                <td>@t.id.get</td>
+                <td>@t.priority</td>
+                <td>@t.status</td>
+                <td>@t.scalaVersion</td>
+                <td>@t.benchmarks.mkString("\n")</td>
+                @if(showAdd || showEdit) { <td>
+                    @if(showEdit) {
+                        <a class="btn btn-default btn-sm" href="@revR(routes.HomeController.editTask(t.id.get))" role="button">
+                            <span class="glyphicon glyphicon-pencil"/>
+                        </a>
+                    }
+                </td> }
+            </tr>
+        }
+    </tbody>
+</table>

@@ -25,15 +25,15 @@ class HomeControllerSpec extends PlaySpec {
       val controller = components.homeController
       val home = controller.index().apply(FakeRequest())
       status(home) mustBe SEE_OTHER
-      redirectLocation(home) mustBe Some("/queue")
+      redirectLocation(home) mustBe Some("/tasks")
     }
 
     "render the queue" in {
       val controller = components.homeController
-      val home = controller.queue().apply(FakeRequest())
+      val home = controller.tasks().apply(FakeRequest())
       status(home) mustBe OK
       contentType(home) mustBe Some("text/html")
-      contentAsString(home) must include("Benchmark Queue")
+      contentAsString(home) must include("Benchmark Tasks")
     }
   }
 }

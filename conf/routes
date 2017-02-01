@@ -12,6 +12,8 @@ GET     /                           controllers.HomeController.index
 GET     /tasks                      controllers.HomeController.tasks(showDone: Boolean ?= false)
 GET     /tasks/new                  controllers.HomeController.newTask()
 POST    /tasks/new                  controllers.HomeController.createTask()
+GET     /tasks/:id                  controllers.HomeController.editTask(id: Long)
+POST    /tasks/:id                  controllers.HomeController.updateTask(id: Long)
 
 GET     /branches                   controllers.HomeController.branches
 GET     /branches/:branch           controllers.HomeController.editKnownRevision(branch: String)

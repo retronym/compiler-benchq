@@ -1,0 +1,20 @@
+@(task: CompilerBenchmarkTask)(implicit revR: RevRouteFix, messages: Messages)
+
+@import b3.vertical.fieldConstructor
+
+@main {
+    <h1>Update Task</h1>
+
+    @taskTable(List(task), false, false)
+
+    @b3.form(revR.call(routes.HomeController.updateTask(task.id.get))) {
+        <div class="actions">
+            <input type="submit" name="action" value="Use as Template" class="btn btn-primary"/>
+            <input type="submit" name="action" value="Mark Done" class="btn btn-warning"/>
+            <input type="submit" name="action" value="Restart" class="btn btn-warning"/>
+            <input type="submit" name="action" value="Delete" class="btn btn-danger"/>
+            or
+            <a href="@revR(routes.HomeController.tasks())" class="btn btn-default">Cancel</a>
+        </div>
+    }
+}
