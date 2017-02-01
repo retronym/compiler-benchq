@@ -30,11 +30,11 @@ class HomeController(config: Config,
     MovedPermanently(externalUrlPrefix + "/" + path)
   }
 
-  val RQueue = Redirect(revR(routes.HomeController.queue()))
+  val RTasks = Redirect(revR(routes.HomeController.tasks()))
 
-  def index = Action(RQueue)
+  def index = Action(RTasks)
 
-  def queue(showDone: Boolean = false) = Action { implicit request =>
+  def tasks(showDone: Boolean = false) = Action { implicit request =>
     val inProgress = compilerBenchmarkTaskService.byPriority(StatusCompanion.allCompanions - Done)
     val done = if (showDone) Some(compilerBenchmarkTaskService.byIndex(Set(Done))) else None
     Ok(html.tasks(inProgress, done))

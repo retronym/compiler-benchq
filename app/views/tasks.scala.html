@@ -25,18 +25,18 @@
 }
 
 @main {
-    <h1>Benchmark Queue</h1>
+    <h1>Benchmark Tasks</h1>
 
     @if(tasks.nonEmpty) {
         @taskTable(tasks)
     } else {
         <div class="well">
-            <em>Queue is empty.</em>
+            <em>Task queue is empty.</em>
         </div>
     }
 
     @done.fold {
-        <a class="btn btn-default" href="@revR(routes.HomeController.queue(true))" role="button">Show Completed</a>
+        <a class="btn btn-default" href="@revR(routes.HomeController.tasks(true))" role="button">Show Completed</a>
     } { ts =>
         <h3>Completed Tasks</h3>
         @taskTable(ts)
