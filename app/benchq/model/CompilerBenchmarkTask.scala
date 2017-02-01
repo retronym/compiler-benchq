@@ -104,6 +104,11 @@ class CompilerBenchmarkTaskService(database: Database,
     getTasks(SQL"#$selectFromTask where status in ($as) order by priority asc")
   }
 
+  def byIndex(status: Set[StatusCompanion]): List[CompilerBenchmarkTask] = {
+    val as = status.map(_.name)
+    getTasks(SQL"#$selectFromTask where status in ($as) order by id desc")
+  }
+
   def update(id: Long, task: CompilerBenchmarkTask): Unit = database.withConnection {
     implicit conn =>
       val newScalaVersionId = scalaVersionService.getIdOrInsert(task.scalaVersion.copy()(None))
