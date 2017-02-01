@@ -12,6 +12,7 @@ sealed trait StatusCompanion {
 }
 
 object Status {
+  def initial = CheckScalaVersionAvailable
   case object CheckScalaVersionAvailable extends Status with StatusCompanion
   case object WaitForScalaVersionAvailable extends Status with StatusCompanion
   case object StartScalaBuild extends Status with StatusCompanion

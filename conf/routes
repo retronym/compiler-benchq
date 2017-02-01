@@ -10,6 +10,8 @@ GET     /*path/                     controllers.HomeController.untrail(path: Str
 GET     /                           controllers.HomeController.index
 
 GET     /tasks                      controllers.HomeController.tasks(showDone: Boolean ?= false)
+GET     /tasks/new                  controllers.HomeController.newTask()
+POST    /tasks/new                  controllers.HomeController.createTask()
 
 GET     /branches                   controllers.HomeController.branches
 GET     /branches/:branch           controllers.HomeController.editKnownRevision(branch: String)

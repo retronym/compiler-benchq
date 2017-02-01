@@ -5,6 +5,7 @@ import javax.inject._
 import benchq.Config
 import benchq.model.Status._
 import benchq.model._
+import benchq.queue.TaskQueue
 import play.api.data.Forms._
 import play.api.data._
 import play.api.data.validation.Constraints
@@ -21,10 +22,15 @@ class HomeController(config: Config,
                      compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
                      knownRevisionService: KnownRevisionService,
                      benchmarkService: BenchmarkService,
+                     taskQueue: TaskQueue,
                      val messagesApi: MessagesApi)
     extends Controller
     with I18nSupport {
   import config.Http._
+
+  // patterns are pushed to the client (html5 form validation), thanks play-bootstrap!
+  val shaMapping: Mapping[String] =
+    nonEmptyText.verifying(Constraints.pattern("[0-9a-f]{40}".r, error = "Not a valid sha"))
 
   def untrail(path: String) = Action {
     MovedPermanently(externalUrlPrefix + "/" + path)
@@ -40,6 +46,45 @@ class HomeController(config: Config,
     Ok(html.tasks(inProgress, done))
   }
 
+  val taskForm: Form[CompilerBenchmarkTask] = Form(
+    mapping(
+      "priority" -> number(min = 0),
+      "scalaVersion" -> shaMapping,
+      "benchmarks" -> list(longNumber).verifying("No benchmark selected", _.nonEmpty)
+    )(
+      (p, v, bs) =>
+        CompilerBenchmarkTask(p,
+                              benchq.model.Status.initial,
+                              ScalaVersion(v, Nil)(None),
+                              bs.flatMap(benchmarkService.findById))(None)
+    )(task => Some((task.priority, task.scalaVersion.sha, task.benchmarks.map(_.id.get))))
+  )
+
+  def allBenchmarksById: Seq[(String, String)] =
+    benchmarkService.all().map(b => (b.id.get.toString, b.toString))
+
+  def defaultTaskValues =
+    CompilerBenchmarkTask(100,
+                          benchq.model.Status.initial,
+                          ScalaVersion("", Nil)(None),
+                          benchmarkService.defaultBenchmarks(Branch.v2_12_x))(None)
+
+  def newTask = Action { implicit request =>
+    Ok(html.taskNew(taskForm.fill(defaultTaskValues), allBenchmarksById))
+  }
+
+  def createTask() = Action { implicit request =>
+    taskForm.bindFromRequest.fold(
+      formWithErrors => BadRequest(html.taskNew(formWithErrors, allBenchmarksById)),
+      task => {
+        compilerBenchmarkTaskService.insert(task)
+        taskQueue.queueActor ! taskQueue.QueueActor.PingQueue
+        RTasks.flashing("success" -> s"Task added to queue")
+      }
+    )
+
+  }
+
   val RBranches = Redirect(revR(routes.HomeController.branches()))
 
   def branches = Action { implicit request =>
@@ -47,11 +92,7 @@ class HomeController(config: Config,
       (b, knownRevisionService.lastKnownRevision(b).map(_.revision)))))
   }
 
-  // patterns are pushed to the client (html5 form validation), thanks play-bootstrap!
-  val revisionForm: Form[String] = Form(
-    single(
-      "revision" -> nonEmptyText.verifying(
-        Constraints.pattern("[0-9a-f]{40}".r, error = "Not a valid sha"))))
+  val revisionForm: Form[String] = Form(single("revision" -> shaMapping))
 
   def editKnownRevision(branch: String) = Action {
     Branch.withNameOption(branch) match {
