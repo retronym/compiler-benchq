@@ -5,13 +5,7 @@
 
     @flashes()
 
-    @if(tasks.nonEmpty) {
-        @taskTable(tasks, true, true)
-    } else {
-        <div class="well">
-            <em>Task queue is empty.</em>
-        </div>
-    }
+    @taskTable(tasks, true, true)
 
     @done.fold {
         <a class="btn btn-default" href="@revR(routes.HomeController.tasks(true))" role="button">Show Completed</a>
