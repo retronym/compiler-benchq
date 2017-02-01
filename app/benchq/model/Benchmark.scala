@@ -13,7 +13,9 @@ import play.api.db.Database
 // Keeping arguments here allows testing other combinations easily (for example custom compiler
 // flags, e.g., when testing a new feature).
 case class Benchmark(name: String, arguments: List[String], defaultBranches: List[Branch])(
-    val id: Option[Long])
+    val id: Option[Long]) {
+  override def toString = name + arguments.mkString(" ", " ", "")
+}
 
 class BenchmarkService(database: Database) {
 

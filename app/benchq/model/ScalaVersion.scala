@@ -7,7 +7,9 @@ import anorm.SqlParser._
 import anorm._
 import play.api.db.Database
 
-case class ScalaVersion(sha: String, compilerOptions: List[String])(val id: Option[Long])
+case class ScalaVersion(sha: String, compilerOptions: List[String])(val id: Option[Long]) {
+  override def toString = sha + compilerOptions.mkString(" ", " ", "")
+}
 
 class ScalaVersionService(database: Database) {
 

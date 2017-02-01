@@ -2,8 +2,15 @@ package benchq
 package model
 
 sealed trait Status {
+  import benchq.model.Status._
+
   def companion: StatusCompanion
   def name: String
+
+  override def toString = this match {
+    case RequestFailed(prev, msg) => s"Failed: $msg"
+    case _ => name
+  }
 }
 
 sealed trait StatusCompanion {

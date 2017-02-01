@@ -4,6 +4,7 @@
 <table class="table table-hover table-striped">
     <thead>
     <tr>
+        <th>Id</th>
         <th>Priority</th>
         <th>Status</th>
         <th>Scala version</th>
@@ -13,10 +14,11 @@
     <tbody>
         @ts.map { t =>
             <tr>
+                <td>@t.id</td>
                 <td>@t.priority</td>
                 <td>@t.status</td>
                 <td>@t.scalaVersion</td>
-                <td>@t.benchmarks</td>
+                <td>@t.benchmarks.mkString("\n")</td>
             </tr>
         }
     </tbody>
