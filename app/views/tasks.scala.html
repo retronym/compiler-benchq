@@ -28,7 +28,8 @@
     <h1>Benchmark Tasks</h1>
 
     @flashes()
-    <a class="btn btn-success pull-right" href="@revR(routes.HomeController.newTask)" role="button">Add a Task</a>
+
+    <p><a class="btn btn-success" href="@revR(routes.HomeController.newTask)" role="button">Add a Task</a></p>
 
     @if(tasks.nonEmpty) {
         @taskTable(tasks)
