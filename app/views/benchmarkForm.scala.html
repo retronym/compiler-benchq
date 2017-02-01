@@ -1,0 +1,29 @@
+@(form: Form[Benchmark], branches: List[(String, String)], submit: Call, submitAction: String, idForDelete: Option[Long])(implicit revR: RevRouteFix, messages: Messages)
+
+@import b3.vertical.fieldConstructor
+
+@b3.form(submit) {
+    <fieldset>
+        @b3.text(form("name"), '_label -> "Benchmark Name")
+        @b3.textarea(form("arguments"),
+            'rows -> 5,
+            '_label -> "Arguments",
+            '_help -> "One argument per line")
+        @b3.select(form("defaultBranches"),
+            options = branches,
+            'multiple -> true,
+            '_label -> "Run by default for new commits",
+            '_help -> "Use command-click / control-click to select or un-select")
+    </fieldset>
+
+    <div class="actions">
+        <input type="submit" value="@submitAction" class="btn btn-primary"/> or
+        <a href="@revR(routes.HomeController.benchmarks)" class="btn btn-default">Cancel</a>
+    </div>
+}
+
+@idForDelete.map { id =>
+    @b3.form(revR.call(routes.HomeController.deleteBenchmark(id)), 'class -> "pull-right") {
+        <input type="submit" value="Delete Benchmark" class="btn btn-danger"/>
+    }
+}

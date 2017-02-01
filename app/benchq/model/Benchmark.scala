@@ -17,6 +17,19 @@ case class Benchmark(name: String, arguments: List[String], defaultBranches: Lis
 
 class BenchmarkService(database: Database) {
 
+  private def updateArgsAndDefaults(id: Long, benchmark: Benchmark)(
+      implicit conn: Connection): Unit = {
+    SQL"delete from benchmarkArgument where benchmarkId = $id".executeUpdate()
+    SQL"delete from defaultBenchmark where benchmarkId = $id".executeUpdate()
+
+    for ((arg, idx) <- benchmark.arguments.iterator.zipWithIndex)
+      SQL"insert into benchmarkArgument values ($id, $arg, $idx)"
+        .executeInsert()
+    for (b <- benchmark.defaultBranches)
+      SQL"insert into defaultBenchmark (branch, benchmarkId) values (${b.entryName}, $id)"
+        .executeInsert()
+  }
+
   /**
    * Get the `id` of a [[Benchmark]], insert it if it doesn't exist yet.
    */
@@ -24,12 +37,7 @@ class BenchmarkService(database: Database) {
     def insert(): Long = {
       val id = SQL"insert into benchmark (name) values (${benchmark.name})"
         .executeInsert(scalar[Long].single)
-      for ((arg, idx) <- benchmark.arguments.iterator.zipWithIndex)
-        SQL"insert into benchmarkArgument values ($id, $arg, $idx)"
-          .executeInsert()
-      for (b <- benchmark.defaultBranches)
-        SQL"insert into defaultBenchmark (branch, benchmarkId) values (${b.entryName}, $id)"
-          .executeInsert()
+      updateArgsAndDefaults(id, benchmark)
       id
     }
 
@@ -72,6 +80,11 @@ class BenchmarkService(database: Database) {
       .map {
         case id ~ name => Benchmark(name, argsForId(id), defaultBranchesFor(id))(Some(id))
       }
+  }
+
+  def update(id: Long, benchmark: Benchmark): Unit = database.withConnection { implicit conn =>
+    SQL"update benchmark set name = ${benchmark.name} where id = $id".executeUpdate()
+    updateArgsAndDefaults(id, benchmark)
   }
 
   def delete(id: Long): Unit = database.withConnection { implicit conn =>

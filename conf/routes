@@ -16,6 +16,12 @@ GET     /branches/:branch           controllers.HomeController.editKnownRevision
 POST    /branches/:branch           controllers.HomeController.updateKnownRevision(branch: String)
 
 GET     /benchmarks                 controllers.HomeController.benchmarks()
+GET     /benchmarks/new             controllers.HomeController.newBenchmark()
+POST    /benchmarks/new             controllers.HomeController.createBenchmark()
+GET     /benchmarks/:id             controllers.HomeController.editBenchmark(id: Long)
+POST    /benchmarks/:id             controllers.HomeController.updateBenchmark(id: Long)
+POST    /benchmarks/:id/delete      controllers.HomeController.deleteBenchmark(id: Long)
+
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)

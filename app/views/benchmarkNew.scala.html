@@ -1,0 +1,7 @@
+@(form: Form[Benchmark], branches: List[(String, String)])(implicit revR: RevRouteFix, messages: Messages)
+
+@main {
+    <h1>Create new benchmark</h1>
+
+    @benchmarkForm(form, branches, revR.call(routes.HomeController.createBenchmark()), "Create", None)
+}

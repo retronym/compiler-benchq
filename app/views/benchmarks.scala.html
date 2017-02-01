@@ -3,14 +3,17 @@
 @main {
     <h1>Benchmarks</h1>
 
+    @flashes()
+
     <table class="table table-hover table-striped">
         <thead>
         <tr>
+            <th>Id</th>
             <th>Name</th>
             <th>Arguments</th>
-            <th>Default</th>
+            <th>Run by default for</th>
             <th>
-                <a class="btn btn-success btn-sm" href="#" role="button">
+                <a class="btn btn-success btn-sm" href="@revR(routes.HomeController.newBenchmark)" role="button">
                     <span class="glyphicon glyphicon-plus"/>
                 </a>
             </th>
@@ -19,11 +22,12 @@
         <tbody>
             @benchmarks.map { b =>
                 <tr>
+                    <td>@b.id.get</td>
                     <td>@b.name</td>
                     <td>@b.arguments.mkString(", ")</td>
                     <td>@b.defaultBranches.map(_.entryName).mkString(", ")</td>
                     <td>
-                        <a class="btn btn-default btn-sm" href="#" role="button">
+                        <a class="btn btn-default btn-sm" href="@revR(routes.HomeController.editBenchmark(b.id.get))" role="button">
                             <span class="glyphicon glyphicon-pencil"/>
                         </a>
                     </td>

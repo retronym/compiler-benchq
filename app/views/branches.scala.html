@@ -3,17 +3,7 @@
 @main {
     <h1>Last known revisions</h1>
 
-    @flash.get("success").map { message =>
-        <div class="alert alert-success" role="alert">
-            <strong>Done!</strong> @message
-        </div>
-    }
-
-    @flash.get("failure").map { message =>
-        <div class="alert alert-danger" role="alert">
-            <strong>Error!</strong> @message
-        </div>
-    }
+    @flashes()
 
     <table class="table table-hover table-striped">
         <thead>

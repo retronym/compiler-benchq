@@ -49,14 +49,15 @@ class HomeController(config: Config,
 
   // patterns are pushed to the client (html5 form validation), thanks play-bootstrap!
   val revisionForm: Form[String] = Form(
-    single("revision" -> nonEmptyText.verifying(
-      Constraints.pattern("[0-9a-f]{40}".r, error = "Not a valid sha"))))
+    single(
+      "revision" -> nonEmptyText.verifying(
+        Constraints.pattern("[0-9a-f]{40}".r, error = "Not a valid sha"))))
 
   def editKnownRevision(branch: String) = Action {
     Branch.withNameOption(branch) match {
       case Some(b) =>
         val knownRevision = knownRevisionService.lastKnownRevision(b).map(_.revision).getOrElse("")
-        Ok(html.editBranch(b.entryName, revisionForm.fill(knownRevision)))
+        Ok(html.branchEdit(b.entryName, revisionForm.fill(knownRevision)))
       case None =>
         RBranches.flashing("failure" -> s"Cannot edit known revision, unknown branch: $branch")
     }
@@ -64,7 +65,7 @@ class HomeController(config: Config,
 
   def updateKnownRevision(branch: String) = Action { implicit request =>
     revisionForm.bindFromRequest.fold(
-      formWithErrors => BadRequest(html.editBranch(branch, formWithErrors)),
+      formWithErrors => BadRequest(html.branchEdit(branch, formWithErrors)),
       revision => {
         Branch.withNameOption(branch) match {
           case Some(b) =>
@@ -79,7 +80,64 @@ class HomeController(config: Config,
     )
   }
 
-  def benchmarks() = Action { implicit request =>
+  val RBenchmarks = Redirect(revR(routes.HomeController.benchmarks()))
+
+  def benchmarks = Action { implicit request =>
     Ok(html.benchmarks(benchmarkService.all()))
+  }
+
+  // newlines in textareas can be \r\n or \n, http://stackoverflow.com/a/14217315/248998
+  val benchForm: Form[Benchmark] = Form(
+    mapping(
+      "name" -> nonEmptyText,
+      "arguments" -> text,
+      "defaultBranches" -> list(nonEmptyText.verifying(b => Branch.withNameOption(b).nonEmpty))
+    )((n, as, bs) =>
+      Benchmark(n, as.replace("\r\n", "\n").split("\n").toList, bs.map(Branch.withName))(None))(
+      b => Some((b.name, b.arguments.mkString("\n"), b.defaultBranches.map(_.entryName))))
+  )
+
+  def allBranchesMapping: List[(String, String)] = {
+    val bs = Branch.sortedValues.map(_.entryName)
+    bs zip bs
+  }
+
+  def editBenchmark(id: Long) = Action { implicit request =>
+    benchmarkService.findById(id) match {
+      case Some(bm) =>
+        Ok(html.benchmarkEdit(id, benchForm.fill(bm), allBranchesMapping))
+
+      case None =>
+        RBenchmarks.flashing("failure" -> s"Cannot edit benchmark, unknown id: $id")
+    }
+  }
+
+  def updateBenchmark(id: Long) = Action { implicit request =>
+    benchForm.bindFromRequest.fold(
+      formWithErrors => BadRequest(html.benchmarkEdit(id, formWithErrors, allBranchesMapping)),
+      benchmark => {
+        benchmarkService.update(id, benchmark)
+        RBenchmarks.flashing("success" -> s"Updated benchmark $id")
+      }
+    )
+  }
+
+  def newBenchmark = Action { implicit request =>
+    Ok(html.benchmarkNew(benchForm, allBranchesMapping))
+  }
+
+  def createBenchmark() = Action { implicit request =>
+    benchForm.bindFromRequest.fold(
+      formWithErrors => BadRequest(html.benchmarkNew(formWithErrors, allBranchesMapping)),
+      benchmark => {
+        val id = benchmarkService.getIdOrInsert(benchmark)
+        RBenchmarks.flashing("success" -> s"Created benchmark $id")
+      }
+    )
+  }
+
+  def deleteBenchmark(id: Long) = Action { implicit request =>
+    benchmarkService.delete(id)
+    RBenchmarks.flashing("success" -> s"Deleted benchmark $id")
   }
 }
