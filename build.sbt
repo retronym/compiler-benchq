@@ -12,12 +12,15 @@ libraryDependencies ++= List(
   jdbc,
   evolutions,
   ws,
+  cache,
   "com.typesafe.play"        %% "anorm"              % "2.5.0",
   "org.influxdb"             %  "influxdb-java"      % "2.5",
   "com.softwaremill.macwire" %% "macros"             % "2.2.5"  % "provided",
   "com.beachape"             %% "enumeratum"         % "1.5.6",
   "com.github.pathikrit"     %% "better-files"       % "2.17.1",
   "com.adrianhurt"           %% "play-bootstrap"     % "1.1-P25-B3",
+  "org.pac4j"                %  "play-pac4j"         % "2.6.2",
+  "org.pac4j"                %  "pac4j-oauth"        % "1.9.5",
   "org.scalatestplus.play"   %% "scalatestplus-play" % "1.5.1"  % Test,
   "com.typesafe.akka"        %% "akka-testkit"       % "2.4.12" % Test)
 

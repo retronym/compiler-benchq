@@ -75,4 +75,9 @@ class Config(config: Configuration) {
   object GitRepo {
     val checkoutLocation = configString("gitRepo.checkoutLocation")
   }
+
+  object OAuth {
+    val githubSecret = configString("oauth.github.secret")
+    val githubCallbackUrl = configString("oauth.github.callbackUrl")
+  }
 }

@@ -6,11 +6,16 @@ import benchq.Config
 import benchq.model.Status._
 import benchq.model._
 import benchq.queue.TaskQueue
+import org.pac4j.core.config.{Config => OAuthConfig}
+import org.pac4j.core.profile.CommonProfile
+import org.pac4j.play.scala.Security
+import org.pac4j.play.store.PlaySessionStore
 import play.api.data.Forms._
 import play.api.data._
 import play.api.data.validation.Constraints
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc._
+import play.libs.concurrent.HttpExecutionContext
 import views._
 
 /**
@@ -18,15 +23,19 @@ import views._
  * application's home page.
  */
 @Singleton
-class HomeController(config: Config,
+class HomeController(appConfig: Config,
                      compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
                      knownRevisionService: KnownRevisionService,
                      benchmarkService: BenchmarkService,
                      taskQueue: TaskQueue,
-                     val messagesApi: MessagesApi)
+                     val messagesApi: MessagesApi,
+                     val config: OAuthConfig,
+                     val playSessionStore: PlaySessionStore,
+                     override val ec: HttpExecutionContext)
     extends Controller
-    with I18nSupport {
-  import config.Http._
+    with I18nSupport
+    with Security[CommonProfile] {
+  import appConfig.Http._
 
   // patterns are pushed to the client (html5 form validation), thanks play-bootstrap!
   val shaMapping: Mapping[String] =
@@ -210,5 +219,10 @@ class HomeController(config: Config,
   def deleteBenchmark(id: Long) = Action { implicit request =>
     benchmarkService.delete(id)
     RBenchmarks.flashing("success" -> s"Deleted benchmark $id")
+  }
+
+  def secret = Secure("GithubClient") { profiles =>
+    println(profiles)
+    Action(Ok("only for you"))
   }
 }
