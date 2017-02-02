@@ -45,3 +45,8 @@ github {
   host = "api.github.com"
   token = ""
 }
+
+oauth.github{
+  secret = ""
+  callbackUrl = "http://localhost:9000/oauth"
+}
