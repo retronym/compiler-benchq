@@ -20,7 +20,7 @@ class Security(config: Config) {
       isAnyAuthorized(context, profiles)
   }
 
-  val githubClient = new GitHubClient("d2142e3366656e7277e5", config.OAuth.githubSecret)
+  val githubClient = new GitHubClient(config.OAuth.githubClientId, config.OAuth.githubSecret)
   val clients = new Clients(config.OAuth.githubCallbackUrl, githubClient)
   val oauthConfig = new OAuthConfig(clients)
   oauthConfig.addAuthorizer("benchqAuthorizer", new BenchqAuthorizer)

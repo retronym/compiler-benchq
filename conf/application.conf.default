@@ -46,7 +46,8 @@ github {
   token = ""
 }
 
-oauth.github{
+oauth.github {
+  clientId = "d2142e3366656e7277e5"
   secret = ""
-  callbackUrl = "http://localhost:9000/oauth"
+  callbackUrl = "https://scala-ci.typesafe.com/benchq/oauth"
 }
