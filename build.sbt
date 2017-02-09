@@ -7,6 +7,9 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, DebianPlugin)
 
 scalaVersion := "2.11.8"
 
+// jwt-core, a dep of silhouette, https://github.com/mohiva/play-silhouette-seed/issues/20#issuecomment-75306712
+resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
+
 libraryDependencies ++= List(
   filters,
   jdbc,
@@ -19,8 +22,7 @@ libraryDependencies ++= List(
   "com.beachape"             %% "enumeratum"         % "1.5.6",
   "com.github.pathikrit"     %% "better-files"       % "2.17.1",
   "com.adrianhurt"           %% "play-bootstrap"     % "1.1-P25-B3",
-  "org.pac4j"                %  "play-pac4j"         % "2.6.2",
-  "org.pac4j"                %  "pac4j-oauth"        % "1.9.5",
+  "com.mohiva"               %% "play-silhouette"    % "4.0.0",
   "org.scalatestplus.play"   %% "scalatestplus-play" % "1.5.1"  % Test,
   "com.typesafe.akka"        %% "akka-testkit"       % "2.4.12" % Test)
 

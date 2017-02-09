@@ -46,8 +46,12 @@ github {
   token = ""
 }
 
-oauth.github {
-  clientId = "d2142e3366656e7277e5"
-  secret = ""
-  callbackUrl = "https://scala-ci.typesafe.com/benchq/oauth"
+silhouette {
+  github {
+    authorizationURL="https://github.com/login/oauth/authorize"
+    accessTokenURL="https://github.com/login/oauth/access_token"
+    redirectURL="https://scala-ci.typesafe.com/benchq/authenticate/github"
+    clientID="d2142e3366656e7277e5"
+    clientSecret=""
+  }
 }

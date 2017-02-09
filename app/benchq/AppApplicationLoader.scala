@@ -8,9 +8,6 @@ import benchq.queue._
 import benchq.repo.ScalaBuildsRepo
 import com.softwaremill.macwire._
 import controllers.{Assets, HomeController}
-import org.pac4j.core.config.{Config => OAuthConfig}
-import org.pac4j.play.store.{PlayCacheStore, PlaySessionStore}
-import org.pac4j.play.{ApplicationLogoutController, CallbackController}
 import play.api.ApplicationLoader.Context
 import play.api._
 import play.api.cache.EhCacheComponents
@@ -19,8 +16,6 @@ import play.api.db.{DBComponents, Database, HikariCPComponents}
 import play.api.i18n.I18nComponents
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.routing.Router
-import play.cache.DefaultCacheApi
-import play.libs.concurrent.{HttpExecution, HttpExecutionContext}
 import router.Routes
 
 class AppApplicationLoader extends ApplicationLoader {
@@ -61,14 +56,6 @@ class BenchQComponents(context: Context)
 
   lazy val toolDb: ToolDb = wire[ToolDb]
   lazy val resultsDb: ResultsDb = wire[ResultsDb]
-
-  lazy val httpExecutionContext = new HttpExecutionContext(HttpExecution.defaultContext())
-  lazy val javaCacheApi = new DefaultCacheApi(defaultCacheApi)
-  lazy val playSessionStore: PlaySessionStore = wire[PlayCacheStore]
-  lazy val security: Security = wire[Security]
-  lazy val oauthConfig: OAuthConfig = security.oauthConfig
-  lazy val callbackController: CallbackController = security.callbackController
-  lazy val logoutController: ApplicationLogoutController = security.logoutController
 
   lazy val config: Config = wire[Config]
   lazy val taskQueue: TaskQueue = wire[TaskQueue]
