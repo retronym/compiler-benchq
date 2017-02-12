@@ -75,4 +75,13 @@ class Config(config: Configuration) {
   object GitRepo {
     val checkoutLocation = configString("gitRepo.checkoutLocation")
   }
+
+  object Silhouette {
+    val cookieSignerKey = configString("silhouette.cookieSignerKey")
+    val githubAuthorizationURL = configString("silhouette.github.authorizationURL")
+    val githubAccessTokenURL = configString("silhouette.github.accessTokenURL")
+    val githubRedirectURL = configString("silhouette.github.redirectURL")
+    val githubClientID = configString("silhouette.github.clientID")
+    val githubClientSecret = configString("silhouette.github.clientSecret")
+  }
 }

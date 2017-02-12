@@ -6,6 +6,12 @@ import benchq.jenkins.ScalaJenkins
 import benchq.model._
 import benchq.queue._
 import benchq.repo.ScalaBuildsRepo
+import com.mohiva.play.silhouette.api.util.{Clock, PlayHTTPLayer}
+import com.mohiva.play.silhouette.crypto.{JcaCookieSigner, JcaCookieSignerSettings}
+import com.mohiva.play.silhouette.impl.providers.OAuth2Settings
+import com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider
+import com.mohiva.play.silhouette.impl.providers.oauth2.state.{CookieStateProvider, CookieStateSettings}
+import com.mohiva.play.silhouette.impl.util.SecureRandomIDGenerator
 import com.softwaremill.macwire._
 import controllers.{Assets, HomeController}
 import play.api.ApplicationLoader.Context
@@ -62,7 +68,6 @@ class BenchQComponents(context: Context)
   lazy val gitRepo: GitRepo = wire[GitRepo]
   lazy val scalaJenkins: ScalaJenkins = wire[ScalaJenkins]
   lazy val scalaBuildsRepo: ScalaBuildsRepo = wire[ScalaBuildsRepo]
-  lazy val webhooks: Webhooks = wire[Webhooks]
 
   lazy val scalaVersionService: ScalaVersionService = wire[ScalaVersionService]
   lazy val benchmarkService: BenchmarkService = wire[BenchmarkService]
@@ -71,5 +76,30 @@ class BenchQComponents(context: Context)
   lazy val benchmarkResultService: BenchmarkResultService = wire[BenchmarkResultService]
   lazy val knownRevisionService: KnownRevisionService = wire[KnownRevisionService]
 
+  lazy val githubAuth: GitHubProvider = {
+    import config.Silhouette._
+    // ExecutionContext, used for PlayHTTPLayer, SecureRandomIDGenerator
+    implicit val ec = play.api.libs.concurrent.Execution.Implicits.defaultContext
+    val httpLayer = {
+      wire[PlayHTTPLayer]
+    }
+    val stateProvider: CookieStateProvider = {
+      val settings = CookieStateSettings(secureCookie = false) // disable for testing without ssl
+      val idGenerator = new SecureRandomIDGenerator
+      val jcacookieSigner = new JcaCookieSigner(JcaCookieSignerSettings(cookieSignerKey))
+      val clock = Clock()
+      wire[CookieStateProvider]
+    }
+    val settings = OAuth2Settings(
+      authorizationURL = Some(githubAuthorizationURL),
+      accessTokenURL = githubAccessTokenURL,
+      redirectURL = githubRedirectURL,
+      clientID = githubClientID,
+      clientSecret = githubClientSecret
+    )
+    wire[GitHubProvider]
+  }
+
   lazy val homeController: HomeController = wire[HomeController]
+  lazy val webhooks: Webhooks = wire[Webhooks]
 }
