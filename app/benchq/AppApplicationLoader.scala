@@ -6,23 +6,38 @@ import benchq.jenkins.ScalaJenkins
 import benchq.model._
 import benchq.queue._
 import benchq.repo.ScalaBuildsRepo
-import com.mohiva.play.silhouette.api.util.{Clock, PlayHTTPLayer}
+import benchq.security._
+import com.mohiva.play.silhouette.api.actions._
+import com.mohiva.play.silhouette.api.crypto.Base64AuthenticatorEncoder
+import com.mohiva.play.silhouette.api.repositories.{AuthInfoRepository, AuthenticatorRepository}
+import com.mohiva.play.silhouette.api.services.AuthenticatorService
+import com.mohiva.play.silhouette.api.util.{Clock, PasswordInfo, PlayHTTPLayer}
+import com.mohiva.play.silhouette.api.{Environment => SilhouetteEnvironment, _}
 import com.mohiva.play.silhouette.crypto.{JcaCookieSigner, JcaCookieSignerSettings}
-import com.mohiva.play.silhouette.impl.providers.OAuth2Settings
+import com.mohiva.play.silhouette.impl.authenticators.{JWTAuthenticator, JWTAuthenticatorService, JWTAuthenticatorSettings}
+import com.mohiva.play.silhouette.impl.providers.{OAuth2Info, OAuth2Settings, SocialProviderRegistry}
 import com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider
 import com.mohiva.play.silhouette.impl.providers.oauth2.state.{CookieStateProvider, CookieStateSettings}
 import com.mohiva.play.silhouette.impl.util.SecureRandomIDGenerator
+import com.mohiva.play.silhouette.persistence.daos.InMemoryAuthInfoDAO
+import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
 import com.softwaremill.macwire._
-import controllers.{Assets, HomeController}
+import controllers.{Assets, HomeController, SocialAuthController}
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import net.ceedubs.ficus.readers.EnumerationReader._
 import play.api.ApplicationLoader.Context
 import play.api._
 import play.api.cache.EhCacheComponents
 import play.api.db.evolutions.EvolutionsComponents
 import play.api.db.{DBComponents, Database, HikariCPComponents}
 import play.api.i18n.I18nComponents
+import play.api.libs.ws.WSClient
 import play.api.libs.ws.ahc.AhcWSComponents
 import play.api.routing.Router
 import router.Routes
+
+import scala.concurrent.ExecutionContext
 
 class AppApplicationLoader extends ApplicationLoader {
   def load(context: Context): Application = {
@@ -49,7 +64,8 @@ class BenchQComponents(context: Context)
     with EvolutionsComponents
     with AhcWSComponents
     with I18nComponents
-    with EhCacheComponents {
+    with EhCacheComponents
+    with SecurityComponents {
   lazy val assets: Assets = wire[Assets]
   lazy val router: Router = {
     // The default constructor of Routes takes a prefix, so it needs to be in scope. However, the
@@ -76,30 +92,55 @@ class BenchQComponents(context: Context)
   lazy val benchmarkResultService: BenchmarkResultService = wire[BenchmarkResultService]
   lazy val knownRevisionService: KnownRevisionService = wire[KnownRevisionService]
 
-  lazy val githubAuth: GitHubProvider = {
-    import config.Silhouette._
-    // ExecutionContext, used for PlayHTTPLayer, SecureRandomIDGenerator
-    implicit val ec = play.api.libs.concurrent.Execution.Implicits.defaultContext
-    val httpLayer = {
-      wire[PlayHTTPLayer]
-    }
-    val stateProvider: CookieStateProvider = {
-      val settings = CookieStateSettings(secureCookie = false) // disable for testing without ssl
-      val idGenerator = new SecureRandomIDGenerator
-      val jcacookieSigner = new JcaCookieSigner(JcaCookieSignerSettings(cookieSignerKey))
-      val clock = Clock()
-      wire[CookieStateProvider]
-    }
-    val settings = OAuth2Settings(
-      authorizationURL = Some(githubAuthorizationURL),
-      accessTokenURL = githubAccessTokenURL,
-      redirectURL = githubRedirectURL,
-      clientID = githubClientID,
-      clientSecret = githubClientSecret
-    )
-    wire[GitHubProvider]
-  }
-
+  lazy val socialAuthController: SocialAuthController = wire[SocialAuthController]
   lazy val homeController: HomeController = wire[HomeController]
   lazy val webhooks: Webhooks = wire[Webhooks]
+}
+
+trait SecurityComponents {
+  def configuration: Configuration
+  def config: Config
+  def wsClient: WSClient
+
+  // format: off
+
+  implicit lazy val ec: ExecutionContext = play.api.libs.concurrent.Execution.Implicits.defaultContext
+
+  lazy val gitHubProvider: GitHubProvider = wire[GitHubProvider]
+    lazy val httpLayer: PlayHTTPLayer = wire[PlayHTTPLayer]
+    lazy val stateProvider: CookieStateProvider = wire[CookieStateProvider]
+      lazy val cookieStateSettings = CookieStateSettings(secureCookie = false) // disable for testing without ssl
+      lazy val idGenerator = new SecureRandomIDGenerator
+      lazy val jcacookieSigner = new JcaCookieSigner(JcaCookieSignerSettings(config.Silhouette.cookieSignerKey))
+      lazy val clock = Clock()
+    lazy val oauth2Settings: OAuth2Settings = configuration.underlying.as[OAuth2Settings]("silhouette.github")
+
+
+  lazy val silhouette: Silhouette[DefaultEnv] = wire[SilhouetteProvider[DefaultEnv]]
+    lazy val silhouetteEnvironment: SilhouetteEnvironment[DefaultEnv] = SilhouetteEnvironment[DefaultEnv](userService, authenticatorService, requestProviders, eventBus)
+      lazy val userService: UserService = wire[UserService]
+      lazy val authenticatorService: AuthenticatorService[JWTAuthenticator] = wire[JWTAuthenticatorService]
+        lazy val jwtAuthenticatorSettings: JWTAuthenticatorSettings = configuration.underlying.as[JWTAuthenticatorSettings]("silhouette.jwt.authenticator")
+        lazy val repo: Option[AuthenticatorRepository[JWTAuthenticator]] = None
+        lazy val authenticatorEncoder = new Base64AuthenticatorEncoder()
+        // idGenerator from above
+        // clock from above
+      lazy val requestProviders: Seq[RequestProvider] = Seq()
+      lazy val eventBus: EventBus = EventBus()
+    lazy val securedAction: SecuredAction = {
+      val securedErrorHandler: SecuredErrorHandler = wire[CustomSecuredErrorHandler]
+      new DefaultSecuredAction(new DefaultSecuredRequestHandler(securedErrorHandler))
+    }
+    lazy val unsecuredAction: UnsecuredAction = {
+      val unSecuredErrorHandler: UnsecuredErrorHandler = wire[CustomUnsecuredErrorHandler]
+      new DefaultUnsecuredAction(new DefaultUnsecuredRequestHandler(unSecuredErrorHandler))
+    }
+    lazy val userAwareAction = new DefaultUserAwareAction(new DefaultUserAwareRequestHandler)
+
+  lazy val authInfoRepository: AuthInfoRepository = new DelegableAuthInfoRepository(oauth2InfoDAO)
+    lazy val oauth2InfoDAO = wire[InMemoryAuthInfoDAO[OAuth2Info]]
+
+  lazy val socialProviderRegistry: SocialProviderRegistry = SocialProviderRegistry(List(gitHubProvider))
+
+  // format: on
 }

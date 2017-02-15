@@ -33,3 +33,6 @@ GET     /assets/*file               controllers.Assets.versioned(path="/public",
 
 POST    /webhooks/github            benchq.Webhooks.github
 POST    /webhooks/jenkins           benchq.Webhooks.jenkins
+
+# Security
+GET     /authenticate/:provider     controllers.SocialAuthController.authenticate(provider)

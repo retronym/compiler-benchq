@@ -6,12 +6,16 @@ import benchq.Config
 import benchq.model.Status._
 import benchq.model._
 import benchq.queue.TaskQueue
+import benchq.security.DefaultEnv
+import com.mohiva.play.silhouette.api.Silhouette
 import play.api.data.Forms._
 import play.api.data._
 import play.api.data.validation.Constraints
 import play.api.i18n.{I18nSupport, MessagesApi}
 import play.api.mvc._
 import views._
+
+import scala.concurrent.Future
 
 /**
  * This controller creates an `Action` to handle HTTP requests to the
@@ -23,6 +27,7 @@ class HomeController(appConfig: Config,
                      knownRevisionService: KnownRevisionService,
                      benchmarkService: BenchmarkService,
                      taskQueue: TaskQueue,
+                     silhouette: Silhouette[DefaultEnv],
                      val messagesApi: MessagesApi)
     extends Controller
     with I18nSupport {
@@ -212,7 +217,7 @@ class HomeController(appConfig: Config,
     RBenchmarks.flashing("success" -> s"Deleted benchmark $id")
   }
 
-  def secret = Action { implicit request =>
-    Ok("only for you")
+  def secret = silhouette.SecuredAction.async { implicit request =>
+    Future.successful(Ok("only for you"))
   }
 }

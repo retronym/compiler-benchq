@@ -16,16 +16,18 @@ libraryDependencies ++= List(
   evolutions,
   ws,
   cache,
-  "com.typesafe.play"        %% "anorm"                      % "2.5.0",
-  "org.influxdb"             %  "influxdb-java"              % "2.5",
-  "com.softwaremill.macwire" %% "macros"                     % "2.2.5"  % "provided",
-  "com.beachape"             %% "enumeratum"                 % "1.5.6",
-  "com.github.pathikrit"     %% "better-files"               % "2.17.1",
-  "com.adrianhurt"           %% "play-bootstrap"             % "1.1-P25-B3",
-  "com.mohiva"               %% "play-silhouette"            % "4.0.0",
-  "com.mohiva"               %% "play-silhouette-crypto-jca" % "4.0.0",
-  "org.scalatestplus.play"   %% "scalatestplus-play"         % "1.5.1"  % Test,
-  "com.typesafe.akka"        %% "akka-testkit"               % "2.4.12" % Test)
+  "com.typesafe.play"        %% "anorm"                       % "2.5.0",
+  "org.influxdb"             %  "influxdb-java"               % "2.5",
+  "com.softwaremill.macwire" %% "macros"                      % "2.2.5"  % "provided",
+  "com.beachape"             %% "enumeratum"                  % "1.5.6",
+  "com.github.pathikrit"     %% "better-files"                % "2.17.1",
+  "com.adrianhurt"           %% "play-bootstrap"              % "1.1-P25-B3",
+  "com.mohiva"               %% "play-silhouette"             % "4.0.0",
+  "com.mohiva"               %% "play-silhouette-crypto-jca"  % "4.0.0",
+  "com.mohiva"               %% "play-silhouette-persistence" % "4.0.0",
+  "com.iheart"               %% "ficus"                       % "1.2.6",
+  "org.scalatestplus.play"   %% "scalatestplus-play"          % "1.5.1"  % Test,
+  "com.typesafe.akka"        %% "akka-testkit"                % "2.4.12" % Test)
 
 // Access to components in console, interface with DBs
 // When using the database in the REPL, need to call `q` before leaving the REPL. Otherwise the
