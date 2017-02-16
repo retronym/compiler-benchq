@@ -1,25 +1,31 @@
 package controllers
 
+import benchq.Config
 import benchq.security.{DefaultEnv, UserService}
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
-import com.mohiva.play.silhouette.api.{LoginEvent, Silhouette}
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.mohiva.play.silhouette.impl.providers.{CommonSocialProfileBuilder, SocialProvider, SocialProviderRegistry}
+import com.mohiva.play.silhouette.api.{LoginEvent, Silhouette}
+import com.mohiva.play.silhouette.impl.providers.{
+  CommonSocialProfileBuilder,
+  SocialProvider,
+  SocialProviderRegistry
+}
 import play.api.Logger
 import play.api.i18n.{I18nSupport, Messages, MessagesApi}
-import play.api.mvc.{Action, Controller}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.mvc.{Action, Controller}
 
 import scala.concurrent.Future
-
-// TODO: revR
 
 class SocialAuthController(val messagesApi: MessagesApi,
                            silhouette: Silhouette[DefaultEnv],
                            userService: UserService,
                            authInfoRepository: AuthInfoRepository,
-                           socialProviderRegistry: SocialProviderRegistry)
-    extends Controller with I18nSupport {
+                           socialProviderRegistry: SocialProviderRegistry,
+                           appConfig: Config)
+    extends Controller
+    with I18nSupport {
+  import appConfig.Http.revR
 
   def authenticate(provider: String) = Action.async { implicit request =>
     (socialProviderRegistry.get[SocialProvider](provider) match {
@@ -34,7 +40,9 @@ class SocialAuthController(val messagesApi: MessagesApi,
               authenticator <- silhouette.env.authenticatorService.create(profile.loginInfo)
               value <- silhouette.env.authenticatorService.init(authenticator)
               result <- silhouette.env.authenticatorService
-                .embed(value, Redirect(routes.HomeController.tasks()).flashing("success" -> "from social auth"))
+                .embed(value,
+                       Redirect(revR(routes.HomeController.tasks()))
+                         .flashing("success" -> "Login Successful"))
             } yield {
               silhouette.env.eventBus.publish(LoginEvent(user, request))
               result
@@ -46,7 +54,7 @@ class SocialAuthController(val messagesApi: MessagesApi,
     }).recover {
       case e: ProviderException =>
         Logger.error("Unexpected provider error", e)
-        Redirect(routes.HomeController.tasks())
+        Redirect(revR(routes.HomeController.tasks()))
           .flashing("failure" -> Messages("could.not.authenticate"))
     }
   }

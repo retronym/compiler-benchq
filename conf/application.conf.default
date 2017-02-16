@@ -53,5 +53,13 @@ silhouette {
     redirectURL = "https://scala-ci.typesafe.com/benchq/authenticate/github"
     clientID = "d2142e3366656e7277e5"
     clientSecret = ""
+    scope = "user:email"
   }
+
+  // Run `sbt playGenerateSecret` to generate a key
+  cookieSignerKey = ""
+
+  // Cookies with the secure flag are only stored / transmitted by the client on https, set to
+  // `false` for testing without https
+  authenticator.cookie.secureCookie = true
 }
