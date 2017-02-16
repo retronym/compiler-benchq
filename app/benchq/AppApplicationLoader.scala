@@ -14,18 +14,17 @@ import com.mohiva.play.silhouette.api.services.AuthenticatorService
 import com.mohiva.play.silhouette.api.util.{Clock, PlayHTTPLayer}
 import com.mohiva.play.silhouette.api.{Environment => SilhouetteEnvironment, _}
 import com.mohiva.play.silhouette.crypto.{JcaCookieSigner, JcaCookieSignerSettings}
-import com.mohiva.play.silhouette.impl.authenticators.{JWTAuthenticator, JWTAuthenticatorService, JWTAuthenticatorSettings}
-import com.mohiva.play.silhouette.impl.providers.{OAuth2Info, OAuth2Settings, SocialProviderRegistry}
+import com.mohiva.play.silhouette.impl.authenticators._
 import com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider
 import com.mohiva.play.silhouette.impl.providers.oauth2.state.{CookieStateProvider, CookieStateSettings}
-import com.mohiva.play.silhouette.impl.util.SecureRandomIDGenerator
+import com.mohiva.play.silhouette.impl.providers.{OAuth2Info, OAuth2Settings, SocialProviderRegistry}
+import com.mohiva.play.silhouette.impl.util.{DefaultFingerprintGenerator, SecureRandomIDGenerator}
 import com.mohiva.play.silhouette.persistence.daos.InMemoryAuthInfoDAO
 import com.mohiva.play.silhouette.persistence.repositories.DelegableAuthInfoRepository
 import com.softwaremill.macwire._
 import controllers.{Assets, HomeController, SocialAuthController}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import net.ceedubs.ficus.readers.EnumerationReader._
 import play.api.ApplicationLoader.Context
 import play.api._
 import play.api.cache.EhCacheComponents
@@ -119,10 +118,12 @@ trait SecurityComponents {
   lazy val silhouette: Silhouette[DefaultEnv] = wire[SilhouetteProvider[DefaultEnv]]
     lazy val silhouetteEnvironment: SilhouetteEnvironment[DefaultEnv] = SilhouetteEnvironment[DefaultEnv](userService, authenticatorService, requestProviders, eventBus)
       lazy val userService: UserService = wire[UserService]
-      lazy val authenticatorService: AuthenticatorService[JWTAuthenticator] = wire[JWTAuthenticatorService]
-        lazy val jwtAuthenticatorSettings: JWTAuthenticatorSettings = configuration.underlying.as[JWTAuthenticatorSettings]("silhouette.jwt.authenticator")
-        lazy val repo: Option[AuthenticatorRepository[JWTAuthenticator]] = None
+      lazy val authenticatorService: AuthenticatorService[CookieAuthenticator] = wire[CookieAuthenticatorService]
+        lazy val cookieAuthenticatorSettings: CookieAuthenticatorSettings = configuration.underlying.as[CookieAuthenticatorSettings]("silhouette.authenticator.cookie")
+        lazy val repo: Option[AuthenticatorRepository[CookieAuthenticator]] = None
+        // jcaCookieSigner from above
         lazy val authenticatorEncoder = new Base64AuthenticatorEncoder()
+        lazy val fingerprintGenerator = new DefaultFingerprintGenerator()
         // idGenerator from above
         // clock from above
       lazy val requestProviders: Seq[RequestProvider] = Seq()
