@@ -9,10 +9,13 @@ import scala.concurrent.Future
 
 class CustomSecuredErrorHandler extends SecuredErrorHandler {
   def onNotAuthenticated(implicit request: RequestHeader): Future[Result] = {
-    Future.successful(Redirect(controllers.routes.SocialAuthController.authenticate(GitHubProvider.ID)))
+    Future.successful(
+      Redirect(controllers.routes.SocialAuthController.authenticate(GitHubProvider.ID)))
   }
 
   def onNotAuthorized(implicit request: RequestHeader): Future[Result] = {
-    Future.successful(Redirect(controllers.routes.HomeController.tasks()).flashing("success" -> "secured not auth"))
+    Future.successful(
+      Redirect(controllers.routes.HomeController.tasks())
+        .flashing("success" -> "secured not auth"))
   }
 }

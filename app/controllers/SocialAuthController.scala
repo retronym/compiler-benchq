@@ -30,7 +30,7 @@ class SocialAuthController(val messagesApi: MessagesApi,
             for {
               profile <- p.retrieveProfile(authInfo)
               user <- userService.save(profile)
-              authInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
+              _ <- authInfoRepository.save(profile.loginInfo, authInfo)
               authenticator <- silhouette.env.authenticatorService.create(profile.loginInfo)
               value <- silhouette.env.authenticatorService.init(authenticator)
               result <- silhouette.env.authenticatorService

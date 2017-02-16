@@ -11,7 +11,7 @@ import com.mohiva.play.silhouette.api.actions._
 import com.mohiva.play.silhouette.api.crypto.Base64AuthenticatorEncoder
 import com.mohiva.play.silhouette.api.repositories.{AuthInfoRepository, AuthenticatorRepository}
 import com.mohiva.play.silhouette.api.services.AuthenticatorService
-import com.mohiva.play.silhouette.api.util.{Clock, PasswordInfo, PlayHTTPLayer}
+import com.mohiva.play.silhouette.api.util.{Clock, PlayHTTPLayer}
 import com.mohiva.play.silhouette.api.{Environment => SilhouetteEnvironment, _}
 import com.mohiva.play.silhouette.crypto.{JcaCookieSigner, JcaCookieSignerSettings}
 import com.mohiva.play.silhouette.impl.authenticators.{JWTAuthenticator, JWTAuthenticatorService, JWTAuthenticatorSettings}
@@ -111,7 +111,7 @@ trait SecurityComponents {
     lazy val stateProvider: CookieStateProvider = wire[CookieStateProvider]
       lazy val cookieStateSettings = CookieStateSettings(secureCookie = false) // disable for testing without ssl
       lazy val idGenerator = new SecureRandomIDGenerator
-      lazy val jcacookieSigner = new JcaCookieSigner(JcaCookieSignerSettings(config.Silhouette.cookieSignerKey))
+      lazy val jcaCookieSigner = new JcaCookieSigner(JcaCookieSignerSettings(config.Silhouette.cookieSignerKey))
       lazy val clock = Clock()
     lazy val oauth2Settings: OAuth2Settings = configuration.underlying.as[OAuth2Settings]("silhouette.github")
 
