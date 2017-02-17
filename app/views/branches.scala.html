@@ -10,7 +10,7 @@
         <tr>
             <th>Branch</th>
             <th>Last known revision</th>
-            <th/>
+            @if(user.nonEmpty) { <th/> }
         </tr>
         </thead>
         <tbody>
@@ -18,11 +18,11 @@
             <tr>
                 <td>@branch.entryName</td>
                 <td>@shaOpt.getOrElse("")</td>
-                <td>
+                @if(user.nonEmpty) { <td>
                     <a class="btn btn-default btn-sm" href="@revR(routes.HomeController.editKnownRevision(branch.entryName))" role="button">
                         <span class="glyphicon glyphicon-pencil"/>
                     </a>
-                </td>
+                </td> }
             </tr>
         }
         </tbody>

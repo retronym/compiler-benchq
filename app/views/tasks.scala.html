@@ -5,7 +5,7 @@
 
     @flashes()
 
-    @taskTable(tasks, true, true)
+    @taskTable(tasks, user.nonEmpty, user.nonEmpty)
 
     @done.fold {
         <a class="btn btn-default" href="@revR(routes.HomeController.tasks(true))" role="button">Show Completed</a>
