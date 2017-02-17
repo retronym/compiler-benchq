@@ -1,15 +1,11 @@
 package controllers
 
 import benchq.Config
-import benchq.security.{DefaultEnv, UserService}
+import benchq.security.{CustomGithubProvider, DefaultEnv, UserService}
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.{LoginEvent, Silhouette}
-import com.mohiva.play.silhouette.impl.providers.{
-  CommonSocialProfileBuilder,
-  SocialProvider,
-  SocialProviderRegistry
-}
+import com.mohiva.play.silhouette.impl.providers.{SocialProvider, SocialProviderRegistry}
 import play.api.Logger
 import play.api.i18n.{I18nSupport, Messages, MessagesApi}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -29,7 +25,7 @@ class SocialAuthController(val messagesApi: MessagesApi,
 
   def authenticate(provider: String) = Action.async { implicit request =>
     (socialProviderRegistry.get[SocialProvider](provider) match {
-      case Some(p: SocialProvider with CommonSocialProfileBuilder) =>
+      case Some(p: CustomGithubProvider) =>
         p.authenticate().flatMap {
           case Left(result) => Future.successful(result)
           case Right(authInfo) =>

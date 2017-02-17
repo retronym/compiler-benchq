@@ -105,7 +105,7 @@ trait SecurityComponents {
 
   implicit lazy val ec: ExecutionContext = play.api.libs.concurrent.Execution.Implicits.defaultContext
 
-  lazy val gitHubProvider: GitHubProvider = wire[GitHubProvider]
+  lazy val gitHubProvider: CustomGithubProvider = wire[CustomGithubProvider]
     lazy val httpLayer: PlayHTTPLayer = wire[PlayHTTPLayer]
     lazy val stateProvider: CookieStateProvider = wire[CookieStateProvider]
       lazy val cookieStateSettings = CookieStateSettings(secureCookie = false) // disable for testing without ssl
