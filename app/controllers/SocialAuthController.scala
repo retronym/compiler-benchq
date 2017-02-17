@@ -64,7 +64,7 @@ class SocialAuthController(val messagesApi: MessagesApi,
   }
 
   def signOut = SecuredAction.async { implicit request =>
-    val result = Redirect(routes.HomeController.tasks())
+    val result = Redirect(revR(routes.HomeController.tasks()))
     silhouette.env.eventBus.publish(LogoutEvent(request.identity, request))
     silhouette.env.authenticatorService.discard(request.authenticator, result)
   }
