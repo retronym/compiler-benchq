@@ -218,6 +218,6 @@ class HomeController(appConfig: Config,
   }
 
   def secret = silhouette.SecuredAction.async { implicit request =>
-    Future.successful(Ok("only for you"))
+    Future.successful(Ok(s"only for you: ${request.identity}"))
   }
 }

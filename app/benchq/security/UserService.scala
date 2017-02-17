@@ -1,12 +1,13 @@
 package benchq.security
 
+import benchq.model.User
 import com.mohiva.play.silhouette.api.services.IdentityService
 import com.mohiva.play.silhouette.api.{Identity, LoginInfo}
 
 import scala.collection.mutable
 import scala.concurrent.Future
 
-case class User(id: String, login: String, name: String) extends Identity
+
 
 class UserService extends IdentityService[User] {
   val users: mutable.HashMap[String, User] = mutable.HashMap.empty
