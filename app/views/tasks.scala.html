@@ -1,6 +1,6 @@
-@(tasks: List[CompilerBenchmarkTask], done: Option[List[CompilerBenchmarkTask]])(implicit revR: RevRouteFix, flash: Flash)
+@(user: Option[User])(tasks: List[CompilerBenchmarkTask], done: Option[List[CompilerBenchmarkTask]])(implicit revR: RevRouteFix, flash: Flash)
 
-@main {
+@main(user) {
     <h1>Benchmark Tasks</h1>
 
     @flashes()

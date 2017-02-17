@@ -1,8 +1,8 @@
-@(form: Form[CompilerBenchmarkTask], allBenchmarks: Seq[(String, String)])(implicit revR: RevRouteFix, messages: Messages)
+@(user: User)(form: Form[CompilerBenchmarkTask], allBenchmarks: Seq[(String, String)])(implicit revR: RevRouteFix, messages: Messages)
 
 @import b3.vertical.fieldConstructor
 
-@main {
+@main(Some(user)) {
     <h1>New Benchmark Task</h1>
 
     @b3.form(revR.call(routes.HomeController.createTask())) {

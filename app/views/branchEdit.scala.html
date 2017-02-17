@@ -1,8 +1,8 @@
-@(branch: String, f: Form[String])(implicit revR: RevRouteFix, messages: Messages)
+@(user: User)(branch: String, f: Form[String])(implicit revR: RevRouteFix, messages: Messages)
 
 @import b3.vertical.fieldConstructor
 
-@main {
+@main(Some(user)) {
     <h1>Edit Last Known Revision</h1>
     @b3.form(revR.call(routes.HomeController.updateKnownRevision(branch))) {
         <!-- play-bootstrap pushes the validation pattern to the client (html5 form validation).

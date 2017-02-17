@@ -32,6 +32,7 @@ class HomeController(appConfig: Config,
     extends Controller
     with I18nSupport {
   import appConfig.Http._
+  import silhouette.{SecuredAction, UserAwareAction}
 
   // patterns are pushed to the client (html5 form validation), thanks play-bootstrap!
   val shaMapping: Mapping[String] =
@@ -45,10 +46,10 @@ class HomeController(appConfig: Config,
 
   def index = Action(RTasks)
 
-  def tasks(showDone: Boolean = false) = Action { implicit request =>
+  def tasks(showDone: Boolean = false) = UserAwareAction { implicit request =>
     val inProgress = compilerBenchmarkTaskService.byPriority(StatusCompanion.allCompanions - Done)
     val done = if (showDone) Some(compilerBenchmarkTaskService.byIndex(Set(Done))) else None
-    Ok(html.tasks(inProgress, done))
+    Ok(html.tasks(request.identity)(inProgress, done))
   }
 
   val taskForm: Form[CompilerBenchmarkTask] = Form(
@@ -74,13 +75,13 @@ class HomeController(appConfig: Config,
                           ScalaVersion("", Nil)(None),
                           benchmarkService.defaultBenchmarks(Branch.v2_12_x))(None)
 
-  def newTask = Action { implicit request =>
-    Ok(html.taskNew(taskForm.fill(defaultTaskValues), allBenchmarksById))
+  def newTask = SecuredAction { implicit request =>
+    Ok(html.taskNew(request.identity)(taskForm.fill(defaultTaskValues), allBenchmarksById))
   }
 
-  def createTask() = Action { implicit request =>
+  def createTask() = SecuredAction { implicit request =>
     taskForm.bindFromRequest.fold(
-      formWithErrors => BadRequest(html.taskNew(formWithErrors, allBenchmarksById)),
+      formWithErrors => BadRequest(html.taskNew(request.identity)(formWithErrors, allBenchmarksById)),
       task => {
         compilerBenchmarkTaskService.insert(task)
         taskQueue.queueActor ! taskQueue.QueueActor.PingQueue
@@ -89,18 +90,18 @@ class HomeController(appConfig: Config,
     )
   }
 
-  def editTask(id: Long) = Action { implicit request =>
+  def editTask(id: Long) = SecuredAction { implicit request =>
     compilerBenchmarkTaskService.findById(id) match {
-      case Some(t) => Ok(html.taskEdit(t))
+      case Some(t) => Ok(html.taskEdit(request.identity)(t))
       case None => RTasks.flashing("failure" -> s"Task not found: $id")
     }
   }
 
-  def updateTask(id: Long) = Action { implicit request =>
+  def updateTask(id: Long) = SecuredAction { implicit request =>
     def t = compilerBenchmarkTaskService.findById(id).get
     request.body.asFormUrlEncoded.flatMap(_.get("action")).flatMap(_.headOption) match {
       case Some("Use as Template") =>
-        Ok(html.taskNew(taskForm.fill(t), allBenchmarksById))
+        Ok(html.taskNew(request.identity)(taskForm.fill(t), allBenchmarksById))
 
       case Some("Mark Done") =>
         compilerBenchmarkTaskService.update(id, t.copy(status = Done)(None))
@@ -122,26 +123,26 @@ class HomeController(appConfig: Config,
 
   val RBranches = Redirect(revR(routes.HomeController.branches()))
 
-  def branches = Action { implicit request =>
-    Ok(html.branches(Branch.sortedValues.map(b =>
+  def branches = UserAwareAction { implicit request =>
+    Ok(html.branches(request.identity)(Branch.sortedValues.map(b =>
       (b, knownRevisionService.lastKnownRevision(b).map(_.revision)))))
   }
 
   val revisionForm: Form[String] = Form(single("revision" -> shaMapping))
 
-  def editKnownRevision(branch: String) = Action {
+  def editKnownRevision(branch: String) = SecuredAction { implicit request =>
     Branch.withNameOption(branch) match {
       case Some(b) =>
         val knownRevision = knownRevisionService.lastKnownRevision(b).map(_.revision).getOrElse("")
-        Ok(html.branchEdit(b.entryName, revisionForm.fill(knownRevision)))
+        Ok(html.branchEdit(request.identity)(b.entryName, revisionForm.fill(knownRevision)))
       case None =>
         RBranches.flashing("failure" -> s"Cannot edit known revision, unknown branch: $branch")
     }
   }
 
-  def updateKnownRevision(branch: String) = Action { implicit request =>
+  def updateKnownRevision(branch: String) = SecuredAction { implicit request =>
     revisionForm.bindFromRequest.fold(
-      formWithErrors => BadRequest(html.branchEdit(branch, formWithErrors)),
+      formWithErrors => BadRequest(html.branchEdit(request.identity)(branch, formWithErrors)),
       revision => {
         Branch.withNameOption(branch) match {
           case Some(b) =>
@@ -158,8 +159,8 @@ class HomeController(appConfig: Config,
 
   val RBenchmarks = Redirect(revR(routes.HomeController.benchmarks()))
 
-  def benchmarks = Action { implicit request =>
-    Ok(html.benchmarks(benchmarkService.all()))
+  def benchmarks = UserAwareAction { implicit request =>
+    Ok(html.benchmarks(request.identity)(benchmarkService.all()))
   }
 
   // newlines in textareas can be \r\n or \n, http://stackoverflow.com/a/14217315/248998
@@ -178,19 +179,19 @@ class HomeController(appConfig: Config,
     bs zip bs
   }
 
-  def editBenchmark(id: Long) = Action { implicit request =>
+  def editBenchmark(id: Long) = SecuredAction { implicit request =>
     benchmarkService.findById(id) match {
       case Some(bm) =>
-        Ok(html.benchmarkEdit(id, benchForm.fill(bm), allBranchesMapping))
+        Ok(html.benchmarkEdit(request.identity)(id, benchForm.fill(bm), allBranchesMapping))
 
       case None =>
         RBenchmarks.flashing("failure" -> s"Cannot edit benchmark, unknown id: $id")
     }
   }
 
-  def updateBenchmark(id: Long) = Action { implicit request =>
+  def updateBenchmark(id: Long) = SecuredAction { implicit request =>
     benchForm.bindFromRequest.fold(
-      formWithErrors => BadRequest(html.benchmarkEdit(id, formWithErrors, allBranchesMapping)),
+      formWithErrors => BadRequest(html.benchmarkEdit(request.identity)(id, formWithErrors, allBranchesMapping)),
       benchmark => {
         benchmarkService.update(id, benchmark)
         RBenchmarks.flashing("success" -> s"Updated benchmark $id")
@@ -198,13 +199,13 @@ class HomeController(appConfig: Config,
     )
   }
 
-  def newBenchmark = Action { implicit request =>
-    Ok(html.benchmarkNew(benchForm, allBranchesMapping))
+  def newBenchmark = SecuredAction { implicit request =>
+    Ok(html.benchmarkNew(request.identity)(benchForm, allBranchesMapping))
   }
 
-  def createBenchmark() = Action { implicit request =>
+  def createBenchmark() = SecuredAction { implicit request =>
     benchForm.bindFromRequest.fold(
-      formWithErrors => BadRequest(html.benchmarkNew(formWithErrors, allBranchesMapping)),
+      formWithErrors => BadRequest(html.benchmarkNew(request.identity)(formWithErrors, allBranchesMapping)),
       benchmark => {
         val id = benchmarkService.getIdOrInsert(benchmark)
         RBenchmarks.flashing("success" -> s"Created benchmark $id")
@@ -212,12 +213,8 @@ class HomeController(appConfig: Config,
     )
   }
 
-  def deleteBenchmark(id: Long) = Action { implicit request =>
+  def deleteBenchmark(id: Long) = SecuredAction { implicit request =>
     benchmarkService.delete(id)
     RBenchmarks.flashing("success" -> s"Deleted benchmark $id")
-  }
-
-  def secret = silhouette.SecuredAction.async { implicit request =>
-    Future.successful(Ok(s"only for you: ${request.identity}"))
   }
 }

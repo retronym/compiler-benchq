@@ -9,8 +9,6 @@ GET     /*path/                     controllers.HomeController.untrail(path: Str
 
 GET     /                           controllers.HomeController.index
 
-GET     /secret                     controllers.HomeController.secret
-
 GET     /tasks                      controllers.HomeController.tasks(showDone: Boolean ?= false)
 GET     /tasks/new                  controllers.HomeController.newTask()
 POST    /tasks/new                  controllers.HomeController.createTask()
@@ -36,3 +34,4 @@ POST    /webhooks/jenkins           benchq.Webhooks.jenkins
 
 # Security
 GET     /authenticate/:provider     controllers.SocialAuthController.authenticate(provider)
+GET     /signOut                    controllers.SocialAuthController.signOut

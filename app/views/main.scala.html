@@ -1,4 +1,4 @@
-@(content: Html)(implicit revR: RevRouteFix)
+@(user: Option[User])(content: Html)(implicit revR: RevRouteFix)
 
 <!DOCTYPE html>
 <html>
@@ -29,6 +29,14 @@
                         <li @*class="active"*@><a href="@revR(routes.HomeController.tasks())">Task Queue</a></li>
                         <li><a href="@revR(routes.HomeController.branches)">Branches</a></li>
                         <li><a href="@revR(routes.HomeController.benchmarks)">Benchmarks</a></li>
+                    </ul>
+                    <ul class="nav navbar-nav navbar-right">
+                        @user.fold {
+                            <li><a href="@revR(routes.SocialAuthController.authenticate(com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider.ID))">Sign In</a></li>
+                        } { user =>
+                            <li><a href="#">@user.name</a></li>
+                            <li><a href="@revR(routes.SocialAuthController.signOut)">Sign Out</a></li>
+                        }
                     </ul>
                 </div>
             </div>

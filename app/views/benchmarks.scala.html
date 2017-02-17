@@ -1,6 +1,6 @@
-@(benchmarks: List[Benchmark])(implicit revR: RevRouteFix, flash: Flash)
+@(user: Option[User])(benchmarks: List[Benchmark])(implicit revR: RevRouteFix, flash: Flash)
 
-@main {
+@main(user) {
     <h1>Benchmarks</h1>
 
     @flashes()

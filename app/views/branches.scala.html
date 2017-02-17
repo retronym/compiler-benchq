@@ -1,6 +1,6 @@
-@(branches: List[(Branch, Option[String])])(implicit revR: RevRouteFix, flash: Flash)
+@(user: Option[User])(branches: List[(Branch, Option[String])])(implicit revR: RevRouteFix, flash: Flash)
 
-@main {
+@main(user) {
     <h1>Last Known Revisions</h1>
 
     @flashes()

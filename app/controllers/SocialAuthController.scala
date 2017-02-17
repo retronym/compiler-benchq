@@ -4,7 +4,7 @@ import benchq.Config
 import benchq.security.{CustomGithubProvider, DefaultEnv, UserService}
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.mohiva.play.silhouette.api.{LoginEvent, Silhouette}
+import com.mohiva.play.silhouette.api.{LoginEvent, LogoutEvent, Silhouette}
 import com.mohiva.play.silhouette.impl.providers.{SocialProvider, SocialProviderRegistry}
 import play.api.Logger
 import play.api.i18n.{I18nSupport, Messages, MessagesApi}
@@ -22,6 +22,7 @@ class SocialAuthController(val messagesApi: MessagesApi,
     extends Controller
     with I18nSupport {
   import appConfig.Http.revR
+  import silhouette.SecuredAction
 
   def authenticate(provider: String) = Action.async { implicit request =>
     (socialProviderRegistry.get[SocialProvider](provider) match {
@@ -53,5 +54,11 @@ class SocialAuthController(val messagesApi: MessagesApi,
         Redirect(revR(routes.HomeController.tasks()))
           .flashing("failure" -> Messages("could.not.authenticate"))
     }
+  }
+
+  def signOut = SecuredAction.async { implicit request =>
+    val result = Redirect(routes.HomeController.tasks())
+    silhouette.env.eventBus.publish(LogoutEvent(request.identity, request))
+    silhouette.env.authenticatorService.discard(request.authenticator, result)
   }
 }
