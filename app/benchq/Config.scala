@@ -2,6 +2,7 @@ package benchq
 
 import play.api.Configuration
 import play.api.mvc.Call
+import net.ceedubs.ficus.Ficus._
 
 abstract class RevRouteFix {
   def apply(c: Call): String
@@ -78,5 +79,6 @@ class Config(config: Configuration) {
 
   object Silhouette {
     val cookieSignerKey = configString("silhouette.cookieSignerKey")
+    val allowedUsers: Set[String] = config.underlying.as[Set[String]]("silhouette.allowedUsers")
   }
 }

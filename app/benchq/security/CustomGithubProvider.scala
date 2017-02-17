@@ -17,10 +17,9 @@ class CustomGithubProvider(protected val httpLayer: HTTPLayer,
   override val profileParser = new SocialProfileParser[JsValue, GithubProfile, OAuth2Info] {
     def parse(content: JsValue, authInfo: OAuth2Info): Future[GithubProfile] = Future.successful {
       val id = (content \ "id").as[Long].toString
-      GithubProfile(LoginInfo(GitHubProvider.ID, id),
-                    id,
-                    (content \ "login").as[String],
-                    (content \ "name").as[String])
+      val login = (content \ "login").as[String]
+      val name = (content \ "name").asOpt[String].getOrElse(login)
+      GithubProfile(LoginInfo(GitHubProvider.ID, id), id, login, name)
     }
   }
 

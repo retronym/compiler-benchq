@@ -15,7 +15,6 @@ import com.mohiva.play.silhouette.api.util.{Clock, PlayHTTPLayer}
 import com.mohiva.play.silhouette.api.{Environment => SilhouetteEnvironment, _}
 import com.mohiva.play.silhouette.crypto.{JcaCookieSigner, JcaCookieSignerSettings}
 import com.mohiva.play.silhouette.impl.authenticators._
-import com.mohiva.play.silhouette.impl.providers.oauth2.GitHubProvider
 import com.mohiva.play.silhouette.impl.providers.oauth2.state.{CookieStateProvider, CookieStateSettings}
 import com.mohiva.play.silhouette.impl.providers.{OAuth2Info, OAuth2Settings, SocialProviderRegistry}
 import com.mohiva.play.silhouette.impl.util.{DefaultFingerprintGenerator, SecureRandomIDGenerator}

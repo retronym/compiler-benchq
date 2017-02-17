@@ -1,7 +1,7 @@
 package controllers
 
 import benchq.Config
-import benchq.security.{CustomGithubProvider, DefaultEnv, UserService}
+import benchq.security.{CustomGithubProvider, DefaultEnv, UnauthorizedUserException, UserService}
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.{LoginEvent, LogoutEvent, Silhouette}
@@ -28,7 +28,9 @@ class SocialAuthController(val messagesApi: MessagesApi,
     (socialProviderRegistry.get[SocialProvider](provider) match {
       case Some(p: CustomGithubProvider) =>
         p.authenticate().flatMap {
-          case Left(result) => Future.successful(result)
+          case Left(result) =>
+            Future.successful(result)
+
           case Right(authInfo) =>
             for {
               profile <- p.retrieveProfile(authInfo)
@@ -49,10 +51,15 @@ class SocialAuthController(val messagesApi: MessagesApi,
         Future.failed(
           new ProviderException(s"Cannot authenticate with unexpected social provider $provider"))
     }).recover {
+      case UnauthorizedUserException(login) =>
+        Logger.info(s"Unauthorized user: $login")
+        Redirect(revR(routes.HomeController.tasks()))
+          .flashing("failure" -> Messages(s"User $login is not authorized"))
+
       case e: ProviderException =>
         Logger.error("Unexpected provider error", e)
         Redirect(revR(routes.HomeController.tasks()))
-          .flashing("failure" -> Messages("could.not.authenticate"))
+          .flashing("failure" -> Messages("Authentication failed"))
     }
   }
 
