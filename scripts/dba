@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+IFS=$'\n\t'
+
+# http://stackoverflow.com/questions/59895/getting-the-source-directory-of-a-bash-script-from-within
+scriptsDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+cd $scriptsDir/..
+
+[[ ${1:-} != "" ]] || {
+  echo "No db file specified, usage: dba /path/to/db"
+  exit 1
+}
+sbt "runMain org.h2.tools.Shell -url jdbc:h2:$1"

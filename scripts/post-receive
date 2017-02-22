@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# To set up on the server:
+#   ln -s scripts/post-receive .git/hooks/post-receive
+
+# http://stackoverflow.com/questions/59895/getting-the-source-directory-of-a-bash-script-from-within
+scriptsDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+while read oldrev newrev refname
+do
+    # refname is like "refs/heads/master"
+    branch=$(git rev-parse --symbolic --abbrev-ref $refname)
+    if [[ $branch == "master" ]]; then
+        $scriptsDir/deploy
+    fi
+done

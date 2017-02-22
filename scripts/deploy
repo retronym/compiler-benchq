@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+# http://redsymbol.net/articles/unofficial-bash-strict-mode/
+set -euo pipefail
+IFS=$'\n\t'
+
+# http://stackoverflow.com/questions/59895/getting-the-source-directory-of-a-bash-script-from-within
+scriptsDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+cd $scriptsDir/..
+
+sbt clean assembly
+kill $(cat /etc/service/benchq/supervise/pid)
+# runit will restart the service
