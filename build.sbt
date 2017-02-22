@@ -58,6 +58,7 @@ TwirlKeys.templateImports ++= List(
 
 assemblyJarName in assembly := "benchq.jar"
 mainClass in assembly := Some("play.core.server.ProdServerStart")
+test in assembly := {}
 
 // assets
 fullClasspath in assembly += Attributed.blank(PlayKeys.playPackageAssets.value)
