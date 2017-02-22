@@ -7,7 +7,13 @@
 #   git config receive.denyCurrentBranch updateInstead
 
 # http://stackoverflow.com/questions/59895/getting-the-source-directory-of-a-bash-script-from-within
-scriptsDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source="${BASH_SOURCE[0]}"
+while [ -h "$source" ]; do
+  scriptsDir="$( cd -P "$( dirname "$source" )" && pwd )"
+  source="$(readlink "$source")"
+  [[ $source != /* ]] && source="$scriptsDir/$source"
+done
+scriptsDir="$( cd -P "$( dirname "$source" )" && pwd )"
 
 while read oldrev newrev refname
 do
