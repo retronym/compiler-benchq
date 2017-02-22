@@ -3,7 +3,7 @@ organization := "org.scala-lang"
 
 version := "1.0-SNAPSHOT"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala, DebianPlugin)
+lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 scalaVersion := "2.11.8"
 
@@ -45,11 +45,38 @@ initialCommands in Compile in console :=
     |def q = Play.stop(application)
   """.stripMargin
 
-TwirlKeys.templateImports ++= List("benchq.model._", "benchq.RevRouteFix", "play.api.mvc.Flash", "play.api.mvc.Call")
+TwirlKeys.templateImports ++= List(
+  "benchq.model._",
+  "benchq.RevRouteFix",
+  "play.api.mvc.Flash",
+  "play.api.mvc.Call")
 
 // Adds additional packages into conf/routes
 // play.sbt.routes.RoutesKeys.routesImport += "org.scala-lang.binders._"
 
-maintainer in Linux := "Scala Team <scala-team@lightbend.com>"
-packageSummary in Linux := "Scala BenchQ"
-packageDescription := "Scala BenchQ"
+// sbt-assembly
+
+assemblyJarName in assembly := "benchq.jar"
+mainClass in assembly := Some("play.core.server.ProdServerStart")
+
+// assets
+fullClasspath in assembly += Attributed.blank(PlayKeys.playPackageAssets.value)
+
+// exclude commons-logging
+//   - http://stackoverflow.com/questions/36227554/slf4j-causing-multiple-class-name-conflicts-with-sbt-assembly
+//   - https://github.com/sbt/sbt-assembly#exclude-specific-transitive-deps
+libraryDependencies ~= { _ map {
+  case m if m.organization == "com.typesafe.play" =>
+    m.exclude("commons-logging", "commons-logging")
+  case m => m
+}}
+
+assemblyMergeStrategy in assembly := {
+  // play-silhouette.jar and this project both have `messages`
+  case "messages" => MergeStrategy.concat
+  // exists in multiple jars
+  case PathList("META-INF", "io.netty.versions.properties") => MergeStrategy.discard
+  case x =>
+    val oldStrategy = (assemblyMergeStrategy in assembly).value
+    oldStrategy(x)
+}
