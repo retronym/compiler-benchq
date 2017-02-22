@@ -3,6 +3,7 @@ package benchq
 import controllers.HomeController
 import org.scalatestplus.play._
 import play.api._
+import play.api.db.{Database, Databases}
 import play.api.test.Helpers._
 import play.api.test._
 
@@ -16,7 +17,10 @@ class HomeControllerSpec extends PlaySpec {
   lazy val components = {
     val env = Environment.simple()
     val context = ApplicationLoader.createContext(env)
-    new BenchQComponents(context)
+    new BenchQComponents(context) {
+      // prevent connecting to the real db
+      override lazy val database: Database = Databases.inMemory()
+    }
   }
   implicit lazy val app = components.application
 
