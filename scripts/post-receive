@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
 # To set up on the server:
-#   ln -s scripts/post-receive .git/hooks/post-receive
+#   ln -s ../../scripts/post-receive .git/hooks/post-receive
+
+# Allow pushing to the server even if it's an ordinary (non-bare) checkout:
+#   git config receive.denyCurrentBranch updateInstead
 
 # http://stackoverflow.com/questions/59895/getting-the-source-directory-of-a-bash-script-from-within
 scriptsDir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
