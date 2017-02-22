@@ -25,7 +25,7 @@ class HomeControllerSpec extends PlaySpec {
       val controller = components.homeController
       val home = controller.index().apply(FakeRequest())
       status(home) mustBe SEE_OTHER
-      redirectLocation(home) mustBe Some("/tasks")
+      redirectLocation(home) mustBe Some(components.config.Http.reverseRoutePrefix + "/tasks")
     }
 
     "render the queue" in {
