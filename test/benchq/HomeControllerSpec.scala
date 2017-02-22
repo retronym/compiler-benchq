@@ -1,8 +1,10 @@
 package benchq
 
 import controllers.HomeController
+import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play._
 import play.api._
+import play.api.db.evolutions.Evolutions
 import play.api.db.{Database, Databases}
 import play.api.test.Helpers._
 import play.api.test._
@@ -13,7 +15,7 @@ import play.api.test._
  *
  * For more information, see https://www.playframework.com/documentation/latest/ScalaTestingWithScalaTest
  */
-class HomeControllerSpec extends PlaySpec {
+class HomeControllerSpec extends PlaySpec with BeforeAndAfterAll {
   lazy val components = {
     val env = Environment.simple()
     val context = ApplicationLoader.createContext(env)
@@ -23,6 +25,14 @@ class HomeControllerSpec extends PlaySpec {
     }
   }
   implicit lazy val app = components.application
+
+  override def beforeAll(): Unit = {
+    Evolutions.applyEvolutions(components.database)
+  }
+
+  override def afterAll(): Unit = {
+    components.database.shutdown()
+  }
 
   "HomeController GET" should {
     "redirect on index" in {
