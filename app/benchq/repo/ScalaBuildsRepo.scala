@@ -11,10 +11,12 @@ import scala.concurrent.Future
 class ScalaBuildsRepo(ws: WSClient, config: Config) {
   import config.ScalaBuildsRepo._
 
+  // $match expressions don't support regular expressions, just * and ?
+  // https://www.jfrog.com/confluence/display/RTF/Artifactory+Query+Language
   def searchQuery(scalaVersion: ScalaVersion) =
     s"""items.find({
        |  "repo":"$repo",
-       |  "name":{"$$match":"scala-compiler*${scalaVersion.sha.take(7)}-nightly.jar"}
+       |  "name":{"$$match":"scala-compiler*${scalaVersion.sha.take(7)}.jar"}
        |})
      """.stripMargin
 
@@ -24,8 +26,8 @@ class ScalaBuildsRepo(ws: WSClient, config: Config) {
     // { "results": [
     //   {
     //     "repo": "scala-integration",
-    //     "path": "org/scala-lang/scala-compiler/2.12.2-b9d4089-nightly",
-    //     "name": "scala-compiler-2.12.2-b9d4089-nightly.jar",
+    //     "path": "org/scala-lang/scala-compiler/2.12.2-bin-a21daec",
+    //     "name": "scala-compiler-2.12.2-bin-a21daec.jar",
     //     ...
     //   }],
     //   "range": { "start_pos": 0, "end_pos": 1, "total": 1 }
