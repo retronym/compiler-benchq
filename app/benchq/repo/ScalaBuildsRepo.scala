@@ -23,7 +23,7 @@ class ScalaBuildsRepo(ws: WSClient, config: Config) {
     // Example response:
     // { "results": [
     //   {
-    //     "repo": "scala-release-temp",
+    //     "repo": "scala-integration",
     //     "path": "org/scala-lang/scala-compiler/2.12.2-b9d4089-nightly",
     //     "name": "scala-compiler-2.12.2-b9d4089-nightly.jar",
     //     ...

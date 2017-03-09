@@ -36,7 +36,7 @@ scalaJenkins {
 
 scalaBuildsRepo {
   host = "https://scala-ci.typesafe.com/artifactory/api"
-  repo = "scala-release-temp"
+  repo = "scala-integration"
   user = "scala-ci"
   password = ""
 }
