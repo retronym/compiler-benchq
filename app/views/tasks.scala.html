@@ -11,6 +11,6 @@
         <a class="btn btn-default" href="@revR(routes.HomeController.tasks(true))" role="button">Show Completed</a>
     } { ts =>
         <h3>Completed Tasks</h3>
-        @taskTable(ts, false, true)
+        @taskTable(ts, false, user.nonEmpty)
     }
 }
