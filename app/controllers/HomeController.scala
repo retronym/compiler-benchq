@@ -80,7 +80,7 @@ class HomeController(appConfig: Config,
     benchmarkService.all().map(b => (b.id.get.toString, b.toString))
 
   def defaultTaskData =
-    form.NewTaskData(100,
+    form.NewTaskData(CompilerBenchmarkTask.defaultPriority,
                      ScalaVersion.scalaScalaRepo,
                      Nil,
                      benchmarkService.defaultBenchmarks(Branch.v2_12_x))
@@ -94,9 +94,12 @@ class HomeController(appConfig: Config,
       formWithErrors =>
         BadRequest(html.taskNew(request.identity)(formWithErrors, allBenchmarksById)),
       taskData => {
-        println(s"starting new tasks: $taskData")
-//        compilerBenchmarkTaskService.insert(task)
-//        taskQueue.queueActor ! taskQueue.QueueActor.PingQueue
+        for (sha <- taskData.revisions) {
+          val v = ScalaVersion(taskData.repo, sha, Nil)(None)
+          val task = CompilerBenchmarkTask(taskData.priority, initial, v, taskData.benchmarks)(None)
+          compilerBenchmarkTaskService.insert(task)
+        }
+        taskQueue.queueActor ! taskQueue.QueueActor.PingQueue
         RTasks.flashing("success" -> s"Task added to queue")
       }
     )

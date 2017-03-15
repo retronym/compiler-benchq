@@ -169,7 +169,7 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
             newCommits foreach { newCommit =>
               val task =
                 CompilerBenchmarkTask(
-                  100,
+                  CompilerBenchmarkTask.defaultPriority,
                   model.Status.CheckScalaVersionAvailable,
                   ScalaVersion(ScalaVersion.scalaScalaRepo, newCommit, Nil)(None),
                   benchmarkService.defaultBenchmarks(knownRevision.branch))(None)

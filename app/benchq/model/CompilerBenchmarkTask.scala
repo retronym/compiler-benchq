@@ -23,6 +23,10 @@ case class CompilerBenchmarkTask(priority: Int,
                                  benchmarks: List[Benchmark])(val id: Option[Long])
     extends Task
 
+object CompilerBenchmarkTask {
+  val defaultPriority = 100
+}
+
 class CompilerBenchmarkTaskService(database: Database,
                                    scalaVersionService: ScalaVersionService,
                                    benchmarkService: BenchmarkService) {
