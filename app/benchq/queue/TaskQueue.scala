@@ -171,7 +171,7 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
                 CompilerBenchmarkTask(
                   100,
                   model.Status.CheckScalaVersionAvailable,
-                  ScalaVersion(newCommit, Nil)(None),
+                  ScalaVersion(ScalaVersion.scalaScalaRepo, newCommit, Nil)(None),
                   benchmarkService.defaultBenchmarks(knownRevision.branch))(None)
               compilerBenchmarkTaskService.insert(task)
             }

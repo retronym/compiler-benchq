@@ -7,8 +7,14 @@ import anorm.SqlParser._
 import anorm._
 import play.api.db.Database
 
-case class ScalaVersion(/*repo: String, */sha: String, compilerOptions: List[String])(val id: Option[Long]) {
-  override def toString = sha + compilerOptions.mkString(" ", " ", "")
+case class ScalaVersion(repo: String, sha: String, compilerOptions: List[String])(val id: Option[Long]) {
+  override def toString = {
+    val opts = if (compilerOptions.isEmpty) "" else " " + compilerOptions.mkString("", " ", "")
+    s"$repo#$sha$opts"
+  }
+}
+object ScalaVersion {
+  val scalaScalaRepo = "scala/scala"
 }
 
 class ScalaVersionService(database: Database) {
@@ -24,7 +30,7 @@ class ScalaVersionService(database: Database) {
     }
 
     def insert(): Long = {
-      val id = SQL"insert into scalaVersion (sha) values (${scalaVersion.sha})"
+      val id = SQL"insert into scalaVersion (repo, sha) values (${scalaVersion.repo}, ${scalaVersion.sha})"
         .executeInsert(scalar[Long].single)
       for ((option, idx) <- scalaVersion.compilerOptions.iterator.zipWithIndex)
         SQL"insert into scalaVersionCompilerOption values ($id, ${optionId(option)}, $idx)"
@@ -49,15 +55,19 @@ class ScalaVersionService(database: Database) {
   }
 
   def findById(id: Long): Option[ScalaVersion] = database.withConnection { implicit conn =>
-    SQL"select sha from scalaVersion where id = $id"
-      .as(scalar[String].singleOpt)
-      .map(ScalaVersion(_, optsForId(id))(Some(id)))
+    SQL"select repo, sha from scalaVersion where id = $id"
+      .as((str("repo") ~ str("sha")).singleOpt)
+      .map {
+        case r ~ s => ScalaVersion(r, s, optsForId(id))(Some(id))
+      }
   }
 
   def findBySha(sha: String): List[ScalaVersion] = database.withConnection { implicit conn =>
-    SQL"select id from scalaVersion where sha = $sha"
-      .as(scalar[Long].*)
-      .map(id => ScalaVersion(sha, optsForId(id))(Some(id)))
+    SQL"select id, repo from scalaVersion where sha = $sha"
+      .as((long("id") ~ str("repo")).*)
+      .map {
+        case id ~ repo => ScalaVersion(repo, sha, optsForId(id))(Some(id))
+      }
   }
 
   def delete(id: Long): Unit = database.withConnection { implicit conn =>

@@ -80,7 +80,10 @@ class HomeController(appConfig: Config,
     benchmarkService.all().map(b => (b.id.get.toString, b.toString))
 
   def defaultTaskData =
-    form.NewTaskData(100, "scala/scala", Nil, benchmarkService.defaultBenchmarks(Branch.v2_12_x))
+    form.NewTaskData(100,
+                     ScalaVersion.scalaScalaRepo,
+                     Nil,
+                     benchmarkService.defaultBenchmarks(Branch.v2_12_x))
 
   def newTask = SecuredAction { implicit request =>
     Ok(html.taskNew(request.identity)(taskForm.fill(defaultTaskData), allBenchmarksById))
