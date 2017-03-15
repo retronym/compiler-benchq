@@ -1,6 +1,7 @@
 package benchq
 package repo
 
+import benchq.git.GitRepo
 import benchq.model.ScalaVersion
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -8,14 +9,24 @@ import play.api.libs.ws.{WSAuthScheme, WSClient}
 
 import scala.concurrent.Future
 
-class ScalaBuildsRepo(ws: WSClient, config: Config) {
+class ScalaBuildsRepo(ws: WSClient, config: Config, gitRepo: GitRepo) {
   import config.ScalaBuildsRepo._
+
+  def repoFor(scalaVersion: ScalaVersion): String = {
+    // TODO add strings to application.conf
+    if (scalaVersion.repo == ScalaVersion.scalaScalaRepo && gitRepo
+          .branchesContaining(scalaVersion.sha)
+          .map(_.nonEmpty)
+          .getOrElse(false)) "scala-integration"
+    else
+      "scala-release-temp"
+  }
 
   // $match expressions don't support regular expressions, just * and ?
   // https://www.jfrog.com/confluence/display/RTF/Artifactory+Query+Language
   def searchQuery(scalaVersion: ScalaVersion) =
     s"""items.find({
-       |  "repo":"$repo",
+       |  "repo":"${repoFor(scalaVersion)}",
        |  "name":{"$$match":"scala-compiler*${scalaVersion.sha.take(7)}.jar"}
        |})
      """.stripMargin

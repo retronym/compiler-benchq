@@ -24,6 +24,7 @@ case class CompilerBenchmarkTask(priority: Int,
     extends Task
 
 object CompilerBenchmarkTask {
+  // TODO move to application.conf
   val defaultPriority = 100
 }
 

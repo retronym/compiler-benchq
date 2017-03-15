@@ -24,49 +24,46 @@ class ScalaJenkins(ws: WSClient,
     val repoRef = "repo_ref"
     val sbtBuildTask = "sbtBuildTask"
     val testStability = "testStability"
+    val integrationRepoUrl = "integrationRepoUrl"
     val benchqTaskId = "benchqTaskId"
 
-    // the build name (`displayName`) is defined in the job configuration in jenkins
-    def apply(task: CompilerBenchmarkTask): List[(String, String)] = List(
-      repoUser -> "scala",
-      repoName -> "scala",
-      repoRef -> task.scalaVersion.sha,
-      sbtBuildTask -> "version", // a no-opt task to prevent the default `testAll`
-      testStability -> "no",
-      benchqTaskId -> task.id.get.toString
-    )
-  }
+    // TODO move to application.conf
+    val scalaIntegrationRepoUrl = "https://scala-ci.typesafe.com/artifactory/scala-integration/"
+    val scalaReleaseTempRepoUrl = "https://scala-ci.typesafe.com/artifactory/scala-release-temp/"
 
-  def buildJobUrl(scalaVersion: ScalaVersion): Try[Option[String]] = {
-    gitRepo.leastBranchContaining(scalaVersion.sha) map {
-      _.map { branch =>
-        host + s"job/scala-${branch.entryName}-integrate-bootstrap/"
-      }
+    // the build name (`displayName`) is defined in the job configuration in jenkins
+    def apply(task: CompilerBenchmarkTask): List[(String, String)] = {
+      val Array(repoU, repoN) = task.scalaVersion.repo.split('/')
+      // use scala-integration if the commit is already merged to scala/scala
+      val repoUrl =
+        if (task.scalaVersion.repo == ScalaVersion.scalaScalaRepo && gitRepo
+              .branchesContaining(task.scalaVersion.sha)
+              .map(_.nonEmpty)
+              .getOrElse(false)) scalaIntegrationRepoUrl
+        else scalaReleaseTempRepoUrl
+
+      List(
+        repoUser -> repoU,
+        repoName -> repoN,
+        repoRef -> task.scalaVersion.sha,
+        sbtBuildTask -> "version", // a no-opt task to prevent the default `testAll`
+        testStability -> "no",
+        integrationRepoUrl -> repoUrl,
+        benchqTaskId -> task.id.get.toString
+      )
     }
   }
+
+  // the 2.11.x / 2.12.x / 2.13.x bootstrap jobs are identical, we can pick any
+  val buildJobUrl = host + "job/scala-2.13.x-integrate-bootstrap/"
 
   def startScalaBuild(task: CompilerBenchmarkTask): Future[Unit] = {
-    buildJobUrl(task.scalaVersion) match {
-      case Success(Some(url)) =>
-        Logger.info(s"Starting Scala build for ${task.id} at $url")
-        ws.url(url + "buildWithParameters")
-          .withAuth(user, token, WSAuthScheme.BASIC)
-          .withQueryString(buildJobParams(task): _*)
-          .post(Results.EmptyContent())
-          .map(_ => ())
-
-      case Success(None) =>
-        val msg = s"Could not start Scala build for ${task.id}, ${task.scalaVersion.sha}, " +
-            s"the revision is not in a known branch: ${Branch.values.mkString(", ")}"
-        Logger.error(msg)
-        Future.failed(new Exception(msg))
-
-      case Failure(e) =>
-        val msg = s"Could not start Scala build for ${task.scalaVersion.sha}, " +
-            s"querying the git repo failed: ${e.getMessage}"
-        Logger.error(msg)
-        Future.failed(new Exception(msg))
-    }
+    Logger.info(s"Starting Scala build for ${task.id} at $buildJobUrl")
+    ws.url(buildJobUrl + "buildWithParameters")
+      .withAuth(user, token, WSAuthScheme.BASIC)
+      .withQueryString(buildJobParams(task): _*)
+      .post(Results.EmptyContent())
+      .map(_ => ())
   }
 
   object benchmarkJobParams {

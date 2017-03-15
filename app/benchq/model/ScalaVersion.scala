@@ -14,6 +14,7 @@ case class ScalaVersion(repo: String, sha: String, compilerOptions: List[String]
   }
 }
 object ScalaVersion {
+  // TODO move to application.conf
   val scalaScalaRepo = "scala/scala"
 }
 

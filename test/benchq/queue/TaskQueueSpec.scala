@@ -25,7 +25,8 @@ import scala.util.Success
 
 class TaskQueueSpec extends PlaySpec with BeforeAndAfterAll {
 
-  class ScalaBuildsRepoMock(ws: WSClient, config: Config) extends ScalaBuildsRepo(ws, config) {
+  class ScalaBuildsRepoMock(ws: WSClient, config: Config, gitRepo: GitRepo)
+      extends ScalaBuildsRepo(ws, config, gitRepo) {
     override def checkBuildAvailable(scalaVersion: ScalaVersion): Future[Option[String]] = {
       actions("checkBuildAvailable") = scalaVersion
       Future.successful(if (scalaVersion == v2_12_0) Some("2.12.0") else None)

@@ -14,14 +14,14 @@ class GitRepo(config: Config) {
   def checkoutDirectory = File(checkoutLocation)
   def checkoutDirectoryJ = checkoutDirectory.toJava
 
-  def cloneIfNonExisting(): Unit = {
+  private def cloneIfNonExisting(): Unit = {
     if (!checkoutDirectory.exists)
-      Process(s"git clone $repoUrl ${checkoutDirectory.name}", checkoutDirectory.parent.toJava).!!
+      Process(s"git clone $repoUrl ${checkoutDirectory.name}", checkoutDirectory.parent.toJava).!
   }
 
-  def fetchOrigin(): Unit = {
+  private def fetchOrigin(): Unit = {
     cloneIfNonExisting()
-    Process("git fetch -f origin --tags", checkoutDirectoryJ).!!
+    Process("git fetch -f origin --tags", checkoutDirectoryJ).!
   }
 
   def newMergeCommitsSince(knownRevision: KnownRevision): List[String] = {
@@ -33,7 +33,7 @@ class GitRepo(config: Config) {
       checkoutDirectoryJ).lineStream.toList
   }
 
-  def leastBranchContaining(sha: String): Try[Option[Branch]] = {
+  def branchesContaining(sha: String): Try[List[Branch]] = {
     fetchOrigin()
     val originPrefix = "origin/"
     Try {
@@ -45,7 +45,7 @@ class GitRepo(config: Config) {
             case s if s.startsWith(originPrefix) => s.substring(originPrefix.length)
           })
           .toSet
-      Branch.sortedValues.find(b => containingBranches(b.entryName))
+      Branch.sortedValues.filter(b => containingBranches(b.entryName))
     }
   }
 }
