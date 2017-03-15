@@ -34,9 +34,13 @@ class HomeController(appConfig: Config,
   import appConfig.Http._
   import silhouette.{SecuredAction, UserAwareAction}
 
+  val shaPattern = "[0-9a-f]{40}".r
+
   // patterns are pushed to the client (html5 form validation), thanks play-bootstrap!
   val shaMapping: Mapping[String] =
-    nonEmptyText.verifying(Constraints.pattern("[0-9a-f]{40}".r, error = "Not a valid sha"))
+    nonEmptyText.verifying(Constraints.pattern(shaPattern, error = "Not a valid sha"))
+
+  def splitString(s: String): List[String] = s.replace("\r\n", "\n").split("\n").toList
 
   def untrail(path: String) = Action {
     MovedPermanently(externalUrlPrefix + "/" + path)
@@ -52,39 +56,44 @@ class HomeController(appConfig: Config,
     Ok(html.tasks(request.identity)(inProgress, done))
   }
 
-  val taskForm: Form[CompilerBenchmarkTask] = Form(
+  val taskForm: Form[form.NewTaskData] = Form(
     mapping(
       "priority" -> number(min = 0),
-      "scalaVersion" -> shaMapping,
+      "repo" -> nonEmptyText,
+      "revisions" -> nonEmptyText.verifying(
+        "Each line needs to contain a valid 40-character sha",
+        rs => splitString(rs).forall(_.matches(shaPattern.regex))),
       "benchmarks" -> list(longNumber).verifying("No benchmark selected", _.nonEmpty)
     )(
-      (p, v, bs) =>
-        CompilerBenchmarkTask(p,
-                              benchq.model.Status.initial,
-                              ScalaVersion(v, Nil)(None),
-                              bs.flatMap(benchmarkService.findById))(None)
-    )(task => Some((task.priority, task.scalaVersion.sha, task.benchmarks.map(_.id.get))))
+      (p, r, rs, bs) =>
+        form.NewTaskData(p, r, splitString(rs), bs.flatMap(benchmarkService.findById))
+    )(
+      taskData =>
+        Some(
+          (taskData.priority,
+           taskData.repo,
+           taskData.revisions.mkString("\n"),
+           taskData.benchmarks.map(_.id.get))))
   )
 
   def allBenchmarksById: Seq[(String, String)] =
     benchmarkService.all().map(b => (b.id.get.toString, b.toString))
 
-  def defaultTaskValues =
-    CompilerBenchmarkTask(100,
-                          initial,
-                          ScalaVersion("", Nil)(None),
-                          benchmarkService.defaultBenchmarks(Branch.v2_12_x))(None)
+  def defaultTaskData =
+    form.NewTaskData(100, "scala/scala", Nil, benchmarkService.defaultBenchmarks(Branch.v2_12_x))
 
   def newTask = SecuredAction { implicit request =>
-    Ok(html.taskNew(request.identity)(taskForm.fill(defaultTaskValues), allBenchmarksById))
+    Ok(html.taskNew(request.identity)(taskForm.fill(defaultTaskData), allBenchmarksById))
   }
 
   def createTask() = SecuredAction { implicit request =>
     taskForm.bindFromRequest.fold(
-      formWithErrors => BadRequest(html.taskNew(request.identity)(formWithErrors, allBenchmarksById)),
-      task => {
-        compilerBenchmarkTaskService.insert(task)
-        taskQueue.queueActor ! taskQueue.QueueActor.PingQueue
+      formWithErrors =>
+        BadRequest(html.taskNew(request.identity)(formWithErrors, allBenchmarksById)),
+      taskData => {
+        println(s"starting new tasks: $taskData")
+//        compilerBenchmarkTaskService.insert(task)
+//        taskQueue.queueActor ! taskQueue.QueueActor.PingQueue
         RTasks.flashing("success" -> s"Task added to queue")
       }
     )
@@ -101,7 +110,11 @@ class HomeController(appConfig: Config,
     def t = compilerBenchmarkTaskService.findById(id).get
     request.body.asFormUrlEncoded.flatMap(_.get("action")).flatMap(_.headOption) match {
       case Some("Use as Template") =>
-        Ok(html.taskNew(request.identity)(taskForm.fill(t), allBenchmarksById))
+        Ok(
+          html.taskNew(request.identity)(
+            taskForm.fill(
+              form.NewTaskData(t.priority, "TODO REPO", List(t.scalaVersion.sha), t.benchmarks)),
+            allBenchmarksById))
 
       case Some("Mark Done") =>
         compilerBenchmarkTaskService.update(id, t.copy(status = Done)(None))
@@ -169,9 +182,8 @@ class HomeController(appConfig: Config,
       "name" -> nonEmptyText,
       "arguments" -> text,
       "defaultBranches" -> list(nonEmptyText.verifying(b => Branch.withNameOption(b).nonEmpty))
-    )((n, as, bs) =>
-      Benchmark(n, as.replace("\r\n", "\n").split("\n").toList, bs.map(Branch.withName))(None))(
-      b => Some((b.name, b.arguments.mkString("\n"), b.defaultBranches.map(_.entryName))))
+    )((n, as, bs) => Benchmark(n, splitString(as), bs.map(Branch.withName))(None))(b =>
+      Some((b.name, b.arguments.mkString("\n"), b.defaultBranches.map(_.entryName))))
   )
 
   def allBranchesMapping: List[(String, String)] = {
@@ -191,7 +203,8 @@ class HomeController(appConfig: Config,
 
   def updateBenchmark(id: Long) = SecuredAction { implicit request =>
     benchForm.bindFromRequest.fold(
-      formWithErrors => BadRequest(html.benchmarkEdit(request.identity)(id, formWithErrors, allBranchesMapping)),
+      formWithErrors =>
+        BadRequest(html.benchmarkEdit(request.identity)(id, formWithErrors, allBranchesMapping)),
       benchmark => {
         benchmarkService.update(id, benchmark)
         RBenchmarks.flashing("success" -> s"Updated benchmark $id")
@@ -205,7 +218,8 @@ class HomeController(appConfig: Config,
 
   def createBenchmark() = SecuredAction { implicit request =>
     benchForm.bindFromRequest.fold(
-      formWithErrors => BadRequest(html.benchmarkNew(request.identity)(formWithErrors, allBranchesMapping)),
+      formWithErrors =>
+        BadRequest(html.benchmarkNew(request.identity)(formWithErrors, allBranchesMapping)),
       benchmark => {
         val id = benchmarkService.getIdOrInsert(benchmark)
         RBenchmarks.flashing("success" -> s"Created benchmark $id")

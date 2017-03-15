@@ -1,4 +1,4 @@
-@(user: User)(form: Form[CompilerBenchmarkTask], allBenchmarks: Seq[(String, String)])(implicit revR: RevRouteFix, messages: Messages)
+@(user: User)(taskForm: Form[form.NewTaskData], allBenchmarks: Seq[(String, String)])(implicit revR: RevRouteFix, messages: Messages)
 
 @import b3.vertical.fieldConstructor
 
@@ -7,9 +7,13 @@
 
     @b3.form(revR.call(routes.HomeController.createTask())) {
         <fieldset>
-            @b3.text(form("priority"), '_label -> "Priority", '_help -> "0 is highest, 100 is default")
-            @b3.text(form("scalaVersion"), '_label -> "Scala version", 'title -> "Not a valid sha")
-            @b3.select(form("benchmarks"),
+            @b3.text(taskForm("priority"), '_label -> "Priority", '_help -> "0 is highest, 100 is default")
+            @b3.text(taskForm("repo"), '_label -> "Repository", '_help -> "Scala fork containing the revisions to benchmark")
+            @b3.textarea(taskForm("revisions"),
+                'rows -> 5,
+                '_label -> "Revisions",
+                '_help -> "One (full) commit sha per line")
+            @b3.select(taskForm("benchmarks"),
                 options = allBenchmarks,
                 'multiple -> true,
                 '_label -> "Benchmarks",
