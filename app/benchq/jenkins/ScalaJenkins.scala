@@ -19,14 +19,6 @@ class ScalaJenkins(ws: WSClient,
   import config.scalaJenkins._
 
   object buildJobParams {
-    val repoUser = "repo_user"
-    val repoName = "repo_name"
-    val repoRef = "repo_ref"
-    val sbtBuildTask = "sbtBuildTask"
-    val testStability = "testStability"
-    val integrationRepoUrl = "integrationRepoUrl"
-    val benchqTaskId = "benchqTaskId"
-
     // the build name (`displayName`) is defined in the job configuration in jenkins
     def apply(task: CompilerBenchmarkTask): List[(String, String)] = {
       val Array(repoU, repoN) = task.scalaVersion.repo.split('/')
@@ -37,15 +29,18 @@ class ScalaJenkins(ws: WSClient,
           config.scalaBuildsRepo.integrationRepoUrl
         else config.scalaBuildsRepo.tempRepoUrl
 
+      // format: off
       List(
-        repoUser -> repoU,
-        repoName -> repoN,
-        repoRef -> task.scalaVersion.sha,
-        sbtBuildTask -> "version", // a no-opt task to prevent the default `testAll`
-        testStability -> "no",
-        integrationRepoUrl -> repoUrl,
-        benchqTaskId -> task.id.get.toString
+        "repo_user"          -> repoU,
+        "repo_name"          -> repoN,
+        "repo_ref"           -> task.scalaVersion.sha,
+        "sbtBuildTask"       -> "version", // a no-opt task to prevent the default `testAll`
+        "testStability"      -> "no",
+        "publishToSonatype"  -> "no",
+        "integrationRepoUrl" -> repoUrl,
+        "benchqTaskId"       -> task.id.get.toString
       )
+      // format: on
     }
   }
 
