@@ -63,7 +63,7 @@ class Config(config: Configuration) {
     c.copy(baseUrl = trimSl(c.baseUrl), urlPath = "/" + trimSl(c.urlPath))
   }
 
-  case class ScalaJenkins(host: String, user: String, token: String)
+  case class ScalaJenkins(host: String, user: String, token: String, maxConcurrentScalaBuilds: Int)
   val scalaJenkins = {
     val c = config.underlying.as[ScalaJenkins]("scalaJenkins")
     c.copy(host = trimSl(c.host) + "/")

@@ -109,6 +109,11 @@ class CompilerBenchmarkTaskService(database: Database,
     getTasks(SQL"#$selectFromTask where status in ($as) order by id desc")
   }
 
+  def countByStatus(status: StatusCompanion): Int = database.withConnection { implicit conn =>
+    SQL"""select count(id) from compilerBenchmarkTask where status = ${status.name}"""
+      .as(scalar[Int].single)
+  }
+
   def update(id: Long, task: CompilerBenchmarkTask): Unit = database.withConnection {
     implicit conn =>
       val newScalaVersionId = scalaVersionService.getIdOrInsert(task.scalaVersion.copy()(None))

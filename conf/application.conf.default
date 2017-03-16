@@ -36,6 +36,7 @@ scalaJenkins {
   host = "https://scala-ci.typesafe.com"
   user = "scala-jenkins"
   token = ""
+  maxConcurrentScalaBuilds = 2
 }
 
 scalaBuildsRepo {

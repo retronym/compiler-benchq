@@ -47,7 +47,7 @@ initialCommands in Compile in console :=
     |
     |}
     |import components._
-    |def q = Play.stop(application)
+    |def q(): Unit = Play.stop(application)
   """.stripMargin
 
 TwirlKeys.templateImports ++= List(

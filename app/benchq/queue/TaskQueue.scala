@@ -46,13 +46,14 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
 
     def ifSuccess[T](id: Long, res: Try[T])(f: (CompilerBenchmarkTask, T) => Unit): Unit = {
       compilerBenchmarkTaskService.findById(id) match {
-        case Some(task) => res match {
-          case Failure(e) =>
-            Logger.error(s"Action on task $id failed", e)
-            updateStatus(task, RequestFailed(task.status, e.getMessage))
-          case Success(t) =>
-            f(task, t)
-        }
+        case Some(task) =>
+          res match {
+            case Failure(e) =>
+              Logger.error(s"Action on task $id failed", e)
+              updateStatus(task, RequestFailed(task.status, e.getMessage))
+            case Success(t) =>
+              f(task, t)
+          }
 
         case None =>
           Logger.error(s"Could not find task for $id")
@@ -62,7 +63,12 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
     def receive: Receive = {
       case PingQueue => // traverse entire queue, start jobs for actionable items
         val queue = compilerBenchmarkTaskService.byPriority(StatusCompanion.actionableCompanions)
-        var canStartBenchmark = !queue.exists(_.status == WaitForBenchmark)
+
+        var canStartBenchmark = compilerBenchmarkTaskService.countByStatus(WaitForBenchmark) == 0
+
+        var numRunningScalaBuilds = compilerBenchmarkTaskService.countByStatus(WaitForScalaBuild)
+        def canStartScalaBuild =
+          numRunningScalaBuilds < config.scalaJenkins.maxConcurrentScalaBuilds
 
         for (task <- queue; id = task.id.get) task.status match {
           case CheckScalaVersionAvailable =>
@@ -71,8 +77,9 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
               .checkBuildAvailable(task.scalaVersion)
               .onComplete(res => self ! ScalaVersionAvailable(id, res))
 
-          case StartScalaBuild =>
+          case StartScalaBuild if canStartScalaBuild =>
             updateStatus(task, WaitForScalaBuild)
+            numRunningScalaBuilds += 1
             scalaJenkins
               .startScalaBuild(task)
               .onComplete(res => self ! ScalaBuildStarted(id, res))
@@ -173,7 +180,8 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
                   config.appConfig.defaultJobPriority,
                   model.Status.CheckScalaVersionAvailable,
                   ScalaVersion(config.scalaScalaRepo, newCommit, Nil)(None),
-                  benchmarkService.defaultBenchmarks(knownRevision.branch))(None)
+                  benchmarkService.defaultBenchmarks(knownRevision.branch)
+                )(None)
               compilerBenchmarkTaskService.insert(task)
             }
             if (newCommits.nonEmpty) {
