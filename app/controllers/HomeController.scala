@@ -32,6 +32,7 @@ class HomeController(appConfig: Config,
     extends Controller
     with I18nSupport {
   import appConfig.Http._
+  import appConfig.appConfig.defaultJobPriority
   import silhouette.{SecuredAction, UserAwareAction}
 
   val shaPattern = "[0-9a-f]{40}".r
@@ -80,23 +81,28 @@ class HomeController(appConfig: Config,
     benchmarkService.all().map(b => (b.id.get.toString, b.toString))
 
   def defaultTaskData =
-    form.NewTaskData(CompilerBenchmarkTask.defaultPriority,
-                     ScalaVersion.scalaScalaRepo,
+    form.NewTaskData(defaultJobPriority,
+                     appConfig.scalaScalaRepo,
                      Nil,
                      benchmarkService.defaultBenchmarks(Branch.v2_12_x))
 
   def newTask = SecuredAction { implicit request =>
-    Ok(html.taskNew(request.identity)(taskForm.fill(defaultTaskData), allBenchmarksById))
+    Ok(
+      html.taskNew(request.identity)(taskForm.fill(defaultTaskData),
+                                     allBenchmarksById,
+                                     defaultJobPriority))
   }
 
   def createTask() = SecuredAction { implicit request =>
     taskForm.bindFromRequest.fold(
       formWithErrors =>
-        BadRequest(html.taskNew(request.identity)(formWithErrors, allBenchmarksById)),
+        BadRequest(
+          html.taskNew(request.identity)(formWithErrors, allBenchmarksById, defaultJobPriority)),
       taskData => {
         for (sha <- taskData.revisions) {
           val v = ScalaVersion(taskData.repo, sha, Nil)(None)
-          val task = CompilerBenchmarkTask(taskData.priority, initial, v, taskData.benchmarks)(None)
+          val task =
+            CompilerBenchmarkTask(taskData.priority, initial, v, taskData.benchmarks)(None)
           compilerBenchmarkTaskService.insert(task)
         }
         taskQueue.queueActor ! taskQueue.QueueActor.PingQueue
@@ -117,10 +123,13 @@ class HomeController(appConfig: Config,
     request.body.asFormUrlEncoded.flatMap(_.get("action")).flatMap(_.headOption) match {
       case Some("Use as Template") =>
         Ok(
-          html.taskNew(request.identity)(
-            taskForm.fill(
-              form.NewTaskData(t.priority, "TODO REPO", List(t.scalaVersion.sha), t.benchmarks)),
-            allBenchmarksById))
+          html.taskNew(request.identity)(taskForm.fill(
+                                           form.NewTaskData(t.priority,
+                                                            t.scalaVersion.repo,
+                                                            List(t.scalaVersion.sha),
+                                                            t.benchmarks)),
+                                         allBenchmarksById,
+                                         defaultJobPriority))
 
       case Some("Mark Done") =>
         compilerBenchmarkTaskService.update(id, t.copy(status = Done)(None))

@@ -16,7 +16,7 @@ class ScalaJenkins(ws: WSClient,
                    config: Config,
                    scalaBuildsRepo: ScalaBuildsRepo,
                    gitRepo: GitRepo) {
-  import config.ScalaJenkins._
+  import config.scalaJenkins._
 
   object buildJobParams {
     val repoUser = "repo_user"
@@ -27,20 +27,15 @@ class ScalaJenkins(ws: WSClient,
     val integrationRepoUrl = "integrationRepoUrl"
     val benchqTaskId = "benchqTaskId"
 
-    // TODO move to application.conf
-    val scalaIntegrationRepoUrl = "https://scala-ci.typesafe.com/artifactory/scala-integration/"
-    val scalaReleaseTempRepoUrl = "https://scala-ci.typesafe.com/artifactory/scala-release-temp/"
-
     // the build name (`displayName`) is defined in the job configuration in jenkins
     def apply(task: CompilerBenchmarkTask): List[(String, String)] = {
       val Array(repoU, repoN) = task.scalaVersion.repo.split('/')
       // use scala-integration if the commit is already merged to scala/scala
       val repoUrl =
-        if (task.scalaVersion.repo == ScalaVersion.scalaScalaRepo && gitRepo
-              .branchesContaining(task.scalaVersion.sha)
-              .map(_.nonEmpty)
-              .getOrElse(false)) scalaIntegrationRepoUrl
-        else scalaReleaseTempRepoUrl
+        if (task.scalaVersion.repo == config.scalaScalaRepo && gitRepo.isMerged(
+              task.scalaVersion.sha))
+          config.scalaBuildsRepo.integrationRepoUrl
+        else config.scalaBuildsRepo.tempRepoUrl
 
       List(
         repoUser -> repoU,

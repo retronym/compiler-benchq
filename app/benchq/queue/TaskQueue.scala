@@ -21,7 +21,8 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
                 knownRevisionService: KnownRevisionService,
                 benchmarkService: BenchmarkService,
                 gitRepo: GitRepo,
-                system: ActorSystem) {
+                system: ActorSystem,
+                config: Config) {
 
   val queueActor = system.actorOf(QueueActor.props, "queue-actor")
   val checkNewCommitsActor = system.actorOf(CheckNewCommitsActor.props, "check-new-commits-actor")
@@ -169,9 +170,9 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
             newCommits foreach { newCommit =>
               val task =
                 CompilerBenchmarkTask(
-                  CompilerBenchmarkTask.defaultPriority,
+                  config.appConfig.defaultJobPriority,
                   model.Status.CheckScalaVersionAvailable,
-                  ScalaVersion(ScalaVersion.scalaScalaRepo, newCommit, Nil)(None),
+                  ScalaVersion(config.scalaScalaRepo, newCommit, Nil)(None),
                   benchmarkService.defaultBenchmarks(knownRevision.branch))(None)
               compilerBenchmarkTaskService.insert(task)
             }

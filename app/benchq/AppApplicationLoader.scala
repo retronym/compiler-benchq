@@ -109,7 +109,7 @@ trait SecurityComponents {
     lazy val stateProvider: CookieStateProvider = wire[CookieStateProvider]
       lazy val cookieStateSettings = CookieStateSettings(secureCookie = false) // disable for testing without ssl
       lazy val idGenerator = new SecureRandomIDGenerator
-      lazy val jcaCookieSigner = new JcaCookieSigner(JcaCookieSignerSettings(config.Silhouette.cookieSignerKey))
+      lazy val jcaCookieSigner = new JcaCookieSigner(JcaCookieSignerSettings(config.silhouette.cookieSignerKey))
       lazy val clock = Clock()
     lazy val oauth2Settings: OAuth2Settings = configuration.underlying.as[OAuth2Settings]("silhouette.github")
 

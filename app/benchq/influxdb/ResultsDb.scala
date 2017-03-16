@@ -12,7 +12,7 @@ import scala.collection.convert.decorateAsScala._
 import scala.concurrent.Future
 
 class ResultsDb(config: Config) {
-  import config.InfluxDb._
+  import config.influxDb._
 
   def sendResults(task: CompilerBenchmarkTask, results: List[BenchmarkResult]): Future[Unit] = {
     Future.successful(())
@@ -21,7 +21,7 @@ class ResultsDb(config: Config) {
   // utility for console interaction: `sbt console`, `scala> resultsDb.query(...)`
 
   def query(s: String): List[Series] = withConnection { conn =>
-    val r = conn.query(new Query(s, influxDbName))
+    val r = conn.query(new Query(s, dbName))
     r.getResults.asScala.flatMap(_.getSeries.asScala).toList
   }
 
@@ -35,21 +35,21 @@ class ResultsDb(config: Config) {
     val client = new OkHttpClient.Builder()
 
     // work around https://github.com/influxdata/influxdb-java/issues/268
-    if (!influxUrlPath.isEmpty)
+    if (!urlPath.isEmpty)
       client.addNetworkInterceptor(new Interceptor {
         override def intercept(chain: Chain): Response = {
           val fixedUrl = chain
             .request()
             .url()
             .newBuilder()
-            .encodedPath(influxUrlPath + chain.request().url().encodedPath())
+            .encodedPath(urlPath + chain.request().url().encodedPath())
           chain.proceed(chain.request().newBuilder().url(fixedUrl.build()).build())
         }
       })
 
     client.authenticator(new Authenticator {
       override def authenticate(route: Route, response: Response): Request = {
-        val credential = Credentials.basic(influxUser, influxPassword)
+        val credential = Credentials.basic(user, password)
         response
           .request()
           .newBuilder()
@@ -58,6 +58,6 @@ class ResultsDb(config: Config) {
       }
     })
 
-    InfluxDBFactory.connect(influxUrl, influxUser, influxPassword, client)
+    InfluxDBFactory.connect(url, user, password, client)
   }
 }

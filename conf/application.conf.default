@@ -1,5 +1,9 @@
 # https://www.playframework.com/documentation/latest/Configuration
 
+app {
+  defaultJobPriority = 100
+}
+
 # Run `sbt playUpdateSecret`
 play.crypto.secret = "changeme"
 
@@ -35,8 +39,9 @@ scalaJenkins {
 }
 
 scalaBuildsRepo {
-  host = "https://scala-ci.typesafe.com/artifactory/api"
-  repo = "scala-integration"
+  baseUrl = "https://scala-ci.typesafe.com/artifactory"
+  integrationRepo = "scala-integration"
+  tempRepo = "scala-release-temp"
   user = "scala-ci"
   password = ""
 }

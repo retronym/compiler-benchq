@@ -7,6 +7,11 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 scalaVersion := "2.11.8"
 
+scalacOptions ++= List(
+  "-deprecation",
+  "-Xfatal-warnings",
+  "-Xlint")
+
 // jwt-core, a dep of silhouette, https://github.com/mohiva/play-silhouette-seed/issues/20#issuecomment-75306712
 resolvers += "Atlassian Releases" at "https://maven.atlassian.com/public/"
 

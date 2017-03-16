@@ -21,8 +21,10 @@ class ModelSpec extends PlaySpec with BeforeAndAfterAll {
   import components._
   import ScalaVersion._
 
-  val v2_12_0 = ScalaVersion(scalaScalaRepo, "8684ae833dcfeac6107343fcca5501301e509eef", Nil)(None)
-  val v2_12_1 = ScalaVersion(scalaScalaRepo, "2787b47396013a44072fa7321482103b66fbccd3", Nil)(None)
+  val v2_12_0 =
+    ScalaVersion(config.scalaScalaRepo, "8684ae833dcfeac6107343fcca5501301e509eef", Nil)(None)
+  val v2_12_1 =
+    ScalaVersion(config.scalaScalaRepo, "2787b47396013a44072fa7321482103b66fbccd3", Nil)(None)
   val v2_12_1_noForw = v2_12_1.copy(compilerOptions = List("-Xmixin-force-forwarders:junit"))(None)
 
   val hotBetter =

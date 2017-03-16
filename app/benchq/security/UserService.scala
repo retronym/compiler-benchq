@@ -16,7 +16,7 @@ class UserService(config: Config) extends IdentityService[User] {
   }
 
   def save(profile: GithubProfile): Future[User] = {
-    if (config.Silhouette.allowedUsers(profile.login)) {
+    if (config.silhouette.allowedUsers(profile.login)) {
       val r = User(profile.id, profile.login, profile.name)
       users += profile.loginInfo.providerKey -> r
       Future.successful(r)

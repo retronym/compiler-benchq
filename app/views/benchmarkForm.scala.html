@@ -8,7 +8,7 @@
         @b3.textarea(form("arguments"),
             'rows -> 5,
             '_label -> "Arguments",
-            '_help -> "One argument per line")
+            '_help -> "One argument per line. Note that `-p` is not needed here, it will be added by the tool.")
         @b3.select(form("defaultBranches"),
             options = branches,
             'multiple -> true,

@@ -23,11 +23,6 @@ case class CompilerBenchmarkTask(priority: Int,
                                  benchmarks: List[Benchmark])(val id: Option[Long])
     extends Task
 
-object CompilerBenchmarkTask {
-  // TODO move to application.conf
-  val defaultPriority = 100
-}
-
 class CompilerBenchmarkTaskService(database: Database,
                                    scalaVersionService: ScalaVersionService,
                                    benchmarkService: BenchmarkService) {

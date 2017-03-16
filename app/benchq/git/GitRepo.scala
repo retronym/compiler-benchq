@@ -8,7 +8,7 @@ import scala.sys.process._
 import scala.util.Try
 
 class GitRepo(config: Config) {
-  import config.GitRepo._
+  import config.gitRepo._
 
   val repoUrl = "https://github.com/scala/scala.git"
   def checkoutDirectory = File(checkoutLocation)
@@ -48,4 +48,7 @@ class GitRepo(config: Config) {
       Branch.sortedValues.filter(b => containingBranches(b.entryName))
     }
   }
+
+  def isMerged(sha: String): Boolean =
+    branchesContaining(sha).map(_.nonEmpty).getOrElse(false)
 }

@@ -10,16 +10,13 @@ import play.api.libs.ws.{WSAuthScheme, WSClient}
 import scala.concurrent.Future
 
 class ScalaBuildsRepo(ws: WSClient, config: Config, gitRepo: GitRepo) {
-  import config.ScalaBuildsRepo._
+  import config.scalaBuildsRepo._
 
   def repoFor(scalaVersion: ScalaVersion): String = {
-    // TODO add strings to application.conf
-    if (scalaVersion.repo == ScalaVersion.scalaScalaRepo && gitRepo
-          .branchesContaining(scalaVersion.sha)
-          .map(_.nonEmpty)
-          .getOrElse(false)) "scala-integration"
+    if (scalaVersion.repo == config.scalaScalaRepo && gitRepo.isMerged(scalaVersion.sha))
+      integrationRepo
     else
-      "scala-release-temp"
+      tempRepo
   }
 
   // $match expressions don't support regular expressions, just * and ?
@@ -44,7 +41,7 @@ class ScalaBuildsRepo(ws: WSClient, config: Config, gitRepo: GitRepo) {
     //   "range": { "start_pos": 0, "end_pos": 1, "total": 1 }
     // }
     Logger.info(s"Checking if Scala build is available for $scalaVersion")
-    ws.url(host + "/search/aql")
+    ws.url(baseUrl + "api/search/aql")
       .withAuth(user, password, WSAuthScheme.BASIC)
       .post(searchQuery(scalaVersion))
       .map(response =>

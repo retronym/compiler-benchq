@@ -91,8 +91,7 @@ class TaskQueueSpec extends PlaySpec with BeforeAndAfterAll {
   }
 
   val v2_12_0 =
-    ScalaVersion(ScalaVersion.scalaScalaRepo, "8684ae833dcfeac6107343fcca5501301e509eef", Nil)(
-      None)
+    ScalaVersion(config.scalaScalaRepo, "8684ae833dcfeac6107343fcca5501301e509eef", Nil)(None)
   val bench =
     Benchmark("scala.tools.nsc.HotScalacBenchmark",
               List("source=better-files"),

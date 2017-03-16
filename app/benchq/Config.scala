@@ -1,18 +1,17 @@
 package benchq
 
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import play.api.Configuration
 import play.api.mvc.Call
-import net.ceedubs.ficus.Ficus._
 
 abstract class RevRouteFix {
   def apply(c: Call): String
   def call(c: Call): Call
 }
 
+// URL settings end in '/'
 class Config(config: Configuration) {
-  private def configString(path: String): String =
-    config.getString(path).getOrElse(throw config.globalError(s"Missing config: $path"))
-
   private def trimSl(s: String) = s.replaceFirst("^/*", "").replaceFirst("/*$", "")
 
   object Http {
@@ -50,35 +49,42 @@ class Config(config: Configuration) {
         .map(c => "/" + trimSl(c)) getOrElse reverseRoutePrefix
   }
 
-  object InfluxDb {
-    private val influxBaseUrl = trimSl(configString("influx.baseUrl"))
-    val influxUrlPath = "/" + trimSl(configString("influx.urlPath"))
-    val influxUrl = influxBaseUrl + influxUrlPath + "/"
+  val scalaScalaRepo = "scala/scala"
 
-    val influxUser = configString("influx.user")
-    val influxPassword = configString("influx.password")
-    val influxDbName = "scala_benchmark"
+  case class AppConfig(defaultJobPriority: Int)
+  val appConfig = config.underlying.as[AppConfig]("app")
+
+  case class InfluxDb(baseUrl: String, urlPath: String, user: String, password: String) {
+    val url = baseUrl + urlPath + "/"
+    val dbName = "scala_benchmark"
+  }
+  val influxDb = {
+    val c = config.underlying.as[InfluxDb]("influx")
+    c.copy(baseUrl = trimSl(c.baseUrl), urlPath = "/" + trimSl(c.urlPath))
   }
 
-  object ScalaJenkins {
-    val host = trimSl(configString("scalaJenkins.host")) + "/"
-    val user = configString("scalaJenkins.user")
-    val token = configString("scalaJenkins.token")
+  case class ScalaJenkins(host: String, user: String, token: String)
+  val scalaJenkins = {
+    val c = config.underlying.as[ScalaJenkins]("scalaJenkins")
+    c.copy(host = trimSl(c.host) + "/")
   }
 
-  object ScalaBuildsRepo {
-    val host = trimSl(configString("scalaBuildsRepo.host"))
-    val repo = configString("scalaBuildsRepo.repo")
-    val user = configString("scalaBuildsRepo.user")
-    val password = configString("scalaBuildsRepo.password")
+  case class ScalaBuildsRepo(baseUrl: String,
+                             integrationRepo: String,
+                             tempRepo: String,
+                             user: String,
+                             password: String) {
+    val integrationRepoUrl = baseUrl + integrationRepo + "/"
+    val tempRepoUrl = baseUrl + tempRepo + "/"
+  }
+  val scalaBuildsRepo = {
+    val c = config.underlying.as[ScalaBuildsRepo]("scalaBuildsRepo")
+    c.copy(baseUrl = trimSl(c.baseUrl) + "/")
   }
 
-  object GitRepo {
-    val checkoutLocation = configString("gitRepo.checkoutLocation")
-  }
+  case class GitRepo(checkoutLocation: String)
+  val gitRepo = config.underlying.as[GitRepo]("gitRepo")
 
-  object Silhouette {
-    val cookieSignerKey = configString("silhouette.cookieSignerKey")
-    val allowedUsers: Set[String] = config.underlying.as[Set[String]]("silhouette.allowedUsers")
-  }
+  case class Silhouette(cookieSignerKey: String, allowedUsers: Set[String])
+  val silhouette = config.underlying.as[Silhouette]("silhouette")
 }
