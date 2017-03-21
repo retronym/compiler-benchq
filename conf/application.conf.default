@@ -37,6 +37,8 @@ scalaJenkins {
   user = "scala-jenkins"
   token = ""
   maxConcurrentScalaBuilds = 2
+  bootstrapJobName = "bootstrap-benchmark"
+  benchmarkJobName = "compiler-benchmark"
 }
 
 scalaBuildsRepo {

@@ -8,7 +8,9 @@ import play.api.mvc._
 
 import scala.util.{Failure, Success, Try}
 
-class Webhooks(taskQueue: TaskQueue) extends Controller {
+class Webhooks(taskQueue: TaskQueue, config: Config) extends Controller {
+  import config.scalaJenkins
+
   val xGhEventHeader = "X-GitHub-Event"
 
   def github: Action[JsValue] = Action(parse.json) { implicit req =>
@@ -37,8 +39,6 @@ class Webhooks(taskQueue: TaskQueue) extends Controller {
       })
   }
 
-  val BootstrapJobPattern = """scala-2\.1\d\.x-integrate-bootstrap""".r
-  val BenchmarkJobName = "compiler-benchmark"
   val SuccessStr = "SUCCESS"
   val FinalizedStr = "FINALIZED"
 
@@ -56,7 +56,7 @@ class Webhooks(taskQueue: TaskQueue) extends Controller {
     def url = (req.body \ "build" \ "full_url").as[String]
 
     (name, phase, taskIdOpt) match {
-      case (BenchmarkJobName, FinalizedStr, Some(taskId)) =>
+      case (scalaJenkins.benchmarkJobName, FinalizedStr, Some(taskId)) =>
         val result =
           if (status == SuccessStr) Success(Nil) // storing results is not yet implemented
           else
@@ -65,7 +65,7 @@ class Webhooks(taskQueue: TaskQueue) extends Controller {
         taskQueue.queueActor ! taskQueue.QueueActor.BenchmarkFinished(taskId, result)
         Ok
 
-      case (BootstrapJobPattern(), FinalizedStr, Some(taskId)) =>
+      case (scalaJenkins.bootstrapJobName, FinalizedStr, Some(taskId)) =>
         val res =
           if (status == SuccessStr) Success(())
           else Failure(new Exception(s"Scala build failed: $url"))

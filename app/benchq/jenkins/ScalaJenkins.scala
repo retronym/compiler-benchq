@@ -44,8 +44,8 @@ class ScalaJenkins(ws: WSClient,
     }
   }
 
-  // the 2.11.x / 2.12.x / 2.13.x bootstrap jobs are identical, we can pick any
-  val buildJobUrl = host + "job/scala-2.13.x-integrate-bootstrap/"
+  val buildJobUrl = s"${host}job/${bootstrapJobName}/"
+  val benchmarkStartJobUrl = s"${host}job/${benchmarkJobName}/buildWithParameters"
 
   def startScalaBuild(task: CompilerBenchmarkTask): Future[Unit] = {
     Logger.info(s"Starting Scala build for ${task.id} at $buildJobUrl")
@@ -75,7 +75,7 @@ class ScalaJenkins(ws: WSClient,
     scalaBuildsRepo.checkBuildAvailable(task.scalaVersion) flatMap {
       case Some(artifact) =>
         Logger.info(s"Starting benchmark job for ${task.id} using $artifact")
-        ws.url(host + "job/compiler-benchmark/buildWithParameters")
+        ws.url(benchmarkStartJobUrl)
           .withAuth(user, token, WSAuthScheme.BASIC)
           .withQueryString(benchmarkJobParams(task, artifact): _*)
           .post(Results.EmptyContent())
