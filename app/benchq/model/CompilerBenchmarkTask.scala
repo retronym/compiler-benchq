@@ -74,11 +74,13 @@ class CompilerBenchmarkTaskService(database: Database,
       def status(id: Long, name: String): Status = StatusCompanion.companion(name) match {
         case s: Status => s
         case RequestFailed =>
-          SQL"""select previousStatus, message from requestFailedFields
+          if (id == -1) RequestFailed(initial, "Previous status unknown")
+          else
+            SQL"""select previousStatus, message from requestFailedFields
                 where compilerBenchmarkTaskId = $id"""
-            .as(requestFailedFieldsParser.single) match {
-            case s ~ m => RequestFailed(status(-1, s), m)
-          }
+              .as(requestFailedFieldsParser.single) match {
+              case s ~ m => RequestFailed(status(-1, s), m)
+            }
       }
 
       query.as(taskParser.*) map {
