@@ -7,7 +7,8 @@ import anorm.SqlParser._
 import anorm._
 import play.api.db.Database
 
-case class ScalaVersion(repo: String, sha: String, compilerOptions: List[String])(val id: Option[Long]) {
+case class ScalaVersion(repo: String, sha: String, compilerOptions: List[String])(
+    val id: Option[Long]) {
   override def toString = {
     val opts = if (compilerOptions.isEmpty) "" else " " + compilerOptions.mkString("", " ", "")
     s"$repo#$sha$opts"
@@ -27,8 +28,9 @@ class ScalaVersionService(database: Database) {
     }
 
     def insert(): Long = {
-      val id = SQL"insert into scalaVersion (repo, sha) values (${scalaVersion.repo}, ${scalaVersion.sha})"
-        .executeInsert(scalar[Long].single)
+      val id =
+        SQL"insert into scalaVersion (repo, sha) values (${scalaVersion.repo}, ${scalaVersion.sha})"
+          .executeInsert(scalar[Long].single)
       for ((option, idx) <- scalaVersion.compilerOptions.iterator.zipWithIndex)
         SQL"insert into scalaVersionCompilerOption values ($id, ${optionId(option)}, $idx)"
           .executeInsert()
