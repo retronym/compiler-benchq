@@ -7,26 +7,15 @@ import anorm.SqlParser._
 import anorm._
 import play.api.db.Database
 
-// Could be simplified, for example just a long string with the name and arguments, or create a
-// unique name for each combination and keep the mapping to a specific benchmark implementation and
-// its arguments elsewhere, (in the compiler-benchmarks repo).
-// Keeping arguments here allows testing other combinations easily (for example custom compiler
-// flags, e.g., when testing a new feature).
-case class Benchmark(name: String, arguments: List[String], defaultBranches: List[Branch])(
-    val id: Option[Long]) {
-  override def toString = name + arguments.mkString(" ", " ", "")
+case class Benchmark(command: String, defaultBranches: List[Branch])(val id: Option[Long]) {
+  override def toString = command
 }
 
 class BenchmarkService(database: Database) {
 
-  private def updateArgsAndDefaults(id: Long, benchmark: Benchmark)(
-      implicit conn: Connection): Unit = {
-    SQL"delete from benchmarkArgument where benchmarkId = $id".executeUpdate()
+  private def updateDefaults(id: Long, benchmark: Benchmark)(implicit conn: Connection): Unit = {
     SQL"delete from defaultBenchmark where benchmarkId = $id".executeUpdate()
 
-    for ((arg, idx) <- benchmark.arguments.iterator.zipWithIndex)
-      SQL"insert into benchmarkArgument values ($id, $arg, $idx)"
-        .executeInsert()
     for (b <- benchmark.defaultBranches)
       SQL"insert into defaultBenchmark (branch, benchmarkId) values (${b.entryName}, $id)"
         .executeInsert()
@@ -37,23 +26,18 @@ class BenchmarkService(database: Database) {
    */
   def getIdOrInsert(benchmark: Benchmark): Long = database.withConnection { implicit conn =>
     def insert(): Long = {
-      val id = SQL"insert into benchmark (name) values (${benchmark.name})"
+      val id = SQL"insert into benchmark (command) values (${benchmark.command})"
         .executeInsert(scalar[Long].single)
-      updateArgsAndDefaults(id, benchmark)
+      updateDefaults(id, benchmark)
       id
     }
 
     benchmark.id.getOrElse {
-      findByName(benchmark.name)
+      findByCommand(benchmark.command)
         .find(_ == benchmark)
         .flatMap(_.id)
         .getOrElse(insert())
     }
-  }
-
-  private def argsForId(id: Long)(implicit conn: Connection): List[String] = {
-    SQL"select arg, idx from benchmarkArgument where benchmarkId = $id order by idx asc"
-      .as(str("arg").*)
   }
 
   private def defaultBranchesFor(id: Long)(implicit conn: Connection): List[Branch] = {
@@ -63,30 +47,30 @@ class BenchmarkService(database: Database) {
   }
 
   def findById(id: Long): Option[Benchmark] = database.withConnection { implicit conn =>
-    SQL"select name from benchmark where id = $id"
+    SQL"select command from benchmark where id = $id"
       .as(scalar[String].singleOpt)
-      .map(Benchmark(_, argsForId(id), defaultBranchesFor(id))(Some(id)))
+      .map(Benchmark(_, defaultBranchesFor(id))(Some(id)))
   }
 
-  def findByName(name: String): List[Benchmark] = database.withConnection { implicit conn =>
-    SQL"select id from benchmark where name = $name"
+  def findByCommand(command: String): List[Benchmark] = database.withConnection { implicit conn =>
+    SQL"select id from benchmark where command = $command"
       .as(scalar[Long].*)
-      .map(id => Benchmark(name, argsForId(id), defaultBranchesFor(id))(Some(id)))
+      .map(id => Benchmark(command, defaultBranchesFor(id))(Some(id)))
   }
 
-  val benchmarkParser = long("id") ~ str("name")
+  val benchmarkParser = long("id") ~ str("command")
 
   def all(): List[Benchmark] = database.withConnection { implicit conn =>
     SQL"select * from benchmark"
       .as(benchmarkParser.*)
       .map {
-        case id ~ name => Benchmark(name, argsForId(id), defaultBranchesFor(id))(Some(id))
+        case id ~ command => Benchmark(command, defaultBranchesFor(id))(Some(id))
       }
   }
 
   def update(id: Long, benchmark: Benchmark): Unit = database.withConnection { implicit conn =>
-    SQL"update benchmark set name = ${benchmark.name} where id = $id".executeUpdate()
-    updateArgsAndDefaults(id, benchmark)
+    SQL"update benchmark set command = ${benchmark.command} where id = $id".executeUpdate()
+    updateDefaults(id, benchmark)
   }
 
   def delete(id: Long): Unit = database.withConnection { implicit conn =>

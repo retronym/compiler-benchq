@@ -28,11 +28,10 @@ class ModelSpec extends PlaySpec with BeforeAndAfterAll {
   val v2_12_1_noForw = v2_12_1.copy(compilerOptions = List("-Xmixin-force-forwarders:junit"))(None)
 
   val hotBetter =
-    Benchmark("scala.tools.nsc.HotScalacBenchmark",
-              List("source=better-files"),
+    Benchmark("scala.tools.nsc.HotScalacBenchmark -p source=better-files",
               Branch.sortedValues)(None)
   val hotBetterNoForw = hotBetter.copy(
-    arguments = hotBetter.arguments ::: List("extraArgs=-Xmixin-force-forwarders:junit"))(None)
+    command = hotBetter.command + " -p extraArgs=-Xmixin-force-forwarders:junit")(None)
 
   val task1 =
     CompilerBenchmarkTask(1, WaitForScalaBuild, v2_12_0, List(hotBetter, hotBetterNoForw))(None)
@@ -88,21 +87,19 @@ class ModelSpec extends PlaySpec with BeforeAndAfterAll {
       queryOpts mustBe empty
     }
 
-    "delete Benchmark and their arguments, defaults" in {
-      val b = Benchmark("name", List("testArg1", "testArg2"), Branch.sortedValues)(None)
+    "delete Benchmark and their defaults" in {
+      val b = Benchmark("command", Branch.sortedValues)(None)
       val id = benchmarkService.getIdOrInsert(b)
 
-      def queryOpts = toolDb.query(s"select * from benchmarkArgument where benchmarkId = $id")
+      def queryDefault = toolDb.query(s"select * from defaultBenchmark where benchmarkId = $id")
 
       benchmarkService.findById(id) mustEqual Some(b)
-      queryOpts must have length 2
+      queryDefault must have length Branch.values.length
 
       benchmarkService.delete(id)
 
       benchmarkService.findById(id) mustBe empty
-      queryOpts mustBe empty
-
-      toolDb.query(s"select * from defaultBenchmark where benchmarkId = $id") mustBe empty
+      queryDefault mustBe empty
     }
 
     "update and delete benchmark tasks" in {

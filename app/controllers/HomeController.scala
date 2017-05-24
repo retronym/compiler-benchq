@@ -194,11 +194,10 @@ class HomeController(appConfig: Config,
   // newlines in textareas can be \r\n or \n, http://stackoverflow.com/a/14217315/248998
   val benchForm: Form[Benchmark] = Form(
     mapping(
-      "name" -> nonEmptyText,
-      "arguments" -> text,
+      "command" -> nonEmptyText,
       "defaultBranches" -> list(nonEmptyText.verifying(b => Branch.withNameOption(b).nonEmpty))
-    )((n, as, bs) => Benchmark(n, splitString(as), bs.map(Branch.withName))(None))(b =>
-      Some((b.name, b.arguments.mkString("\n"), b.defaultBranches.map(_.entryName))))
+    )((c, bs) => Benchmark(c, bs.map(Branch.withName))(None))(b =>
+      Some((b.command, b.defaultBranches.map(_.entryName))))
   )
 
   def allBranchesMapping: List[(String, String)] = {

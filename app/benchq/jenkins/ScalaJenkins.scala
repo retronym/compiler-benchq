@@ -65,7 +65,7 @@ class ScalaJenkins(ws: WSClient,
     def apply(task: CompilerBenchmarkTask, artifact: String): List[(String, String)] = List(
       scalaVersion -> artifact,
       sbtCommands -> task.benchmarks
-        .map(b => s""""compilation/jmh:run ${b.name} -p ${b.arguments.mkString(" ")}"""")
+        .map(_.command)
         .mkString("[", ", ", "]"),
       benchqTaskId -> task.id.get.toString
     )

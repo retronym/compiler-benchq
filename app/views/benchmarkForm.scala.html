@@ -4,11 +4,7 @@
 
 @b3.form(submit) {
     <fieldset>
-        @b3.text(form("name"), '_label -> "Benchmark name")
-        @b3.textarea(form("arguments"),
-            'rows -> 5,
-            '_label -> "Arguments",
-            '_help -> "One argument per line. Note that `-p` is not needed here, it will be added by the tool.")
+        @b3.text(form("command"), '_label -> "Benchmark command")
         @b3.select(form("defaultBranches"),
             options = branches,
             'multiple -> true,
