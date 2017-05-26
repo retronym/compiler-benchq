@@ -26,6 +26,7 @@ class HomeController(appConfig: Config,
                      compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
                      knownRevisionService: KnownRevisionService,
                      benchmarkService: BenchmarkService,
+                     scalaVersionService: ScalaVersionService,
                      taskQueue: TaskQueue,
                      silhouette: Silhouette[DefaultEnv],
                      val messagesApi: MessagesApi)
@@ -36,6 +37,7 @@ class HomeController(appConfig: Config,
   import silhouette.{SecuredAction, UserAwareAction}
 
   val shaPattern = "[0-9a-f]{40}".r
+  val tagPattern = """v\d+\.\d+\.\d+(?:-\d+)?""".r
 
   // patterns are pushed to the client (html5 form validation), thanks play-bootstrap!
   val shaMapping: Mapping[String] =
@@ -62,8 +64,8 @@ class HomeController(appConfig: Config,
       "priority" -> number(min = 0),
       "repo" -> nonEmptyText,
       "revisions" -> nonEmptyText.verifying(
-        "Each line needs to contain a valid 40-character sha",
-        rs => splitString(rs).forall(_.matches(shaPattern.regex))),
+        "Each line needs to contain a valid 40-character sha or a tag on scala/scala",
+        rs => splitString(rs).forall(rev => rev.matches(tagPattern.regex) || rev.matches(shaPattern.regex))),
       "benchmarks" -> list(longNumber).verifying("No benchmark selected", _.nonEmpty)
     )(
       (p, r, rs, bs) =>
@@ -100,7 +102,7 @@ class HomeController(appConfig: Config,
           html.taskNew(request.identity)(formWithErrors, allBenchmarksById, defaultJobPriority)),
       taskData => {
         for (sha <- taskData.revisions) {
-          val v = ScalaVersion(taskData.repo, sha, Nil)(None)
+          val v = scalaVersionService.fromShaOrTag(taskData.repo, sha)
           val task =
             CompilerBenchmarkTask(taskData.priority, initial, v, taskData.benchmarks)(None)
           compilerBenchmarkTaskService.insert(task)

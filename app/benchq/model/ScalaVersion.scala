@@ -5,6 +5,7 @@ import java.sql.Connection
 
 import anorm.SqlParser._
 import anorm._
+import benchq.git.GitRepo
 import play.api.db.Database
 
 case class ScalaVersion(repo: String, sha: String, compilerOptions: List[String])(
@@ -15,7 +16,13 @@ case class ScalaVersion(repo: String, sha: String, compilerOptions: List[String]
   }
 }
 
-class ScalaVersionService(database: Database) {
+class ScalaVersionService(database: Database, gitRepo: GitRepo, config: Config) {
+  def fromShaOrTag(repo: String, revision: String): ScalaVersion = {
+    if (repo == config.scalaScalaRepo && revision.charAt(0) == 'v') {
+      ScalaVersion(repo, gitRepo.revisionForTag(revision).get, Nil)(None)
+    } else
+      ScalaVersion(repo, revision, Nil)(None)
+  }
 
   /**
    * Get the `id` of a [[ScalaVersion]], insert it if it doesn't exist yet.

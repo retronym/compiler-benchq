@@ -12,7 +12,7 @@
             @b3.textarea(taskForm("revisions"),
                 'rows -> 5,
                 '_label -> "Revisions",
-                '_help -> "One (full) commit sha per line")
+                '_help -> "One (full) commit sha or tag on scala/scala per line")
             @b3.select(taskForm("benchmarks"),
                 options = allBenchmarks,
                 'multiple -> true,
