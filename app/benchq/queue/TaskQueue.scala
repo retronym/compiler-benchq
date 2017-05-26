@@ -116,8 +116,8 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
               else StartScalaBuild
           }
           updateStatus(task, newStatus)
-          self ! PingQueue
         }
+        self ! PingQueue
 
       case ScalaBuildStarted(id, tryRes) =>
         // If the build cannot be started, mark the task as RequestFailed. Otherwise wait for
@@ -135,8 +135,8 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
             .byPriority(Set(WaitForScalaBuild))
             .filter(_.scalaVersion == task.scalaVersion)
             .foreach(task => updateStatus(task, StartBenchmark))
-          self ! PingQueue
         }
+        self ! PingQueue
 
       case BenchmarkStarted(id, tryRes) =>
         // If the benchmark cannot be started, mark the task as RequestFailed. Otherwise wait for
@@ -150,8 +150,8 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
           Logger.info(s"Benchmark job finished for task ${task.id}")
           benchmarkResultService.insertResults(results)
           updateStatus(task, SendResults)
-          self ! PingQueue
         }
+        self ! PingQueue
 
       case ResultsSent(id, tryResult) =>
         ifSuccess(id, tryResult) { (task, _) =>
