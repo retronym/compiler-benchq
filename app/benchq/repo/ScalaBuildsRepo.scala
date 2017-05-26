@@ -31,7 +31,7 @@ class ScalaBuildsRepo(ws: WSClient, config: Config, gitRepo: GitRepo) {
   def checkBuildAvailable(scalaVersion: ScalaVersion): Future[Option[String]] = {
     Logger.info(s"Checking if Scala build is available for $scalaVersion")
 
-    gitRepo.tagForRevision(scalaVersion.sha) match {
+    gitRepo.tagForSha(scalaVersion.sha) match {
       case Some(tag) =>
         Future.successful(Some(tag.substring(1))) // drop `v` from tag name
 

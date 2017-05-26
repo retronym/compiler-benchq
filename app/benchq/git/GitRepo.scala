@@ -52,13 +52,13 @@ class GitRepo(config: Config) {
   def isMerged(sha: String): Boolean =
     branchesContaining(sha).map(_.nonEmpty).getOrElse(false)
 
-  def revisionForTag(tag: String): Try[String] = {
+  def shaForTag(tag: String): Try[String] = {
     fetchOrigin()
-    Try(Process(s"git rev-list -n 1 $tag").lineStream.head)
+    Try(Process(s"git rev-list -n 1 $tag", checkoutDirectoryJ).lineStream.head)
   }
 
-  def tagForRevision(sha: String): Option[String] = {
+  def tagForSha(sha: String): Option[String] = {
     fetchOrigin()
-    Try(Process(s"git describe --tag --exact-match $sha").lineStream.head).toOption
+    Try(Process(s"git describe --tag --exact-match $sha", checkoutDirectoryJ).lineStream.head).toOption
   }
 }

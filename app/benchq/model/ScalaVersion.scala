@@ -19,7 +19,7 @@ case class ScalaVersion(repo: String, sha: String, compilerOptions: List[String]
 class ScalaVersionService(database: Database, gitRepo: GitRepo, config: Config) {
   def fromShaOrTag(repo: String, revision: String): ScalaVersion = {
     if (repo == config.scalaScalaRepo && revision.charAt(0) == 'v') {
-      ScalaVersion(repo, gitRepo.revisionForTag(revision).get, Nil)(None)
+      ScalaVersion(repo, gitRepo.shaForTag(revision).get, Nil)(None)
     } else
       ScalaVersion(repo, revision, Nil)(None)
   }

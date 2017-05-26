@@ -101,8 +101,8 @@ class HomeController(appConfig: Config,
         BadRequest(
           html.taskNew(request.identity)(formWithErrors, allBenchmarksById, defaultJobPriority)),
       taskData => {
-        for (sha <- taskData.revisions) {
-          val v = scalaVersionService.fromShaOrTag(taskData.repo, sha)
+        for (rev <- taskData.revisions) {
+          val v = scalaVersionService.fromShaOrTag(taskData.repo, rev)
           val task =
             CompilerBenchmarkTask(taskData.priority, initial, v, taskData.benchmarks)(None)
           compilerBenchmarkTaskService.insert(task)
