@@ -37,7 +37,7 @@ class HomeController(appConfig: Config,
   import silhouette.{SecuredAction, UserAwareAction}
 
   val shaPattern = "[0-9a-f]{40}".r
-  val tagPattern = """v\d+\.\d+\.\d+(?:-\d+)?""".r
+  val tagPattern = """v\d+\.\d+\.\d+(?:-.+)?""".r
 
   // patterns are pushed to the client (html5 form validation), thanks play-bootstrap!
   val shaMapping: Mapping[String] =
