@@ -66,7 +66,9 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
 
         var canStartBenchmark = compilerBenchmarkTaskService.countByStatus(WaitForBenchmark) == 0
 
-        var numRunningScalaBuilds = compilerBenchmarkTaskService.countByStatus(WaitForScalaBuild)
+        // If there are multiple tasks waiting for the same Scala version, only count one
+        var numRunningScalaBuilds =
+          compilerBenchmarkTaskService.byIndex(Set(WaitForScalaBuild)).map(_.scalaVersion).distinct.size
         def canStartScalaBuild =
           numRunningScalaBuilds < config.scalaJenkins.maxConcurrentScalaBuilds
 
