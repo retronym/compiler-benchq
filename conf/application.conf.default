@@ -55,7 +55,7 @@ github {
 }
 
 silhouette {
-  allowedUsers = ["adriaanm", "lrytz", "retronym", "SethTisue", "szeiger"]
+  allowedUsers = ["adriaanm", "lrytz", "retronym", "SethTisue", "szeiger", "jvican"]
 
   github {
     authorizationURL = "https://github.com/login/oauth/authorize"
