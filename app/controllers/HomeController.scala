@@ -197,9 +197,10 @@ class HomeController(appConfig: Config,
   val benchForm: Form[Benchmark] = Form(
     mapping(
       "command" -> nonEmptyText,
-      "defaultBranches" -> list(nonEmptyText.verifying(b => Branch.withNameOption(b).nonEmpty))
-    )((c, bs) => Benchmark(c, bs.map(Branch.withName))(None))(b =>
-      Some((b.command, b.defaultBranches.map(_.entryName))))
+      "defaultBranches" -> list(nonEmptyText.verifying(b => Branch.withNameOption(b).nonEmpty)),
+      "daily" -> number(min = 0)
+    )((c, bs, d) => Benchmark(c, bs.map(Branch.withName), d)(None))(b =>
+      Some((b.command, b.defaultBranches.map(_.entryName), b.daily)))
   )
 
   def allBranchesMapping: List[(String, String)] = {
@@ -229,7 +230,7 @@ class HomeController(appConfig: Config,
   }
 
   def newBenchmark = SecuredAction { implicit request =>
-    Ok(html.benchmarkNew(request.identity)(benchForm, allBranchesMapping))
+    Ok(html.benchmarkNew(request.identity)(benchForm.fill(Benchmark("", Nil, 0)(None)), allBranchesMapping))
   }
 
   def createBenchmark() = SecuredAction { implicit request =>

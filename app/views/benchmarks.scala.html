@@ -11,6 +11,7 @@
             <th>Id</th>
             <th>Command</th>
             <th>Run by default for</th>
+            <th>Every # days</th>
             @if(user.nonEmpty) { <th>
                 <a class="btn btn-success btn-sm" href="@revR(routes.HomeController.newBenchmark)" role="button">
                     <span class="glyphicon glyphicon-plus"/>
@@ -24,6 +25,7 @@
                     <td>@b.id.get</td>
                     <td>@b.command</td>
                     <td>@b.defaultBranches.map(_.entryName).mkString(", ")</td>
+                    <td>@b.daily</td>
                     @if(user.nonEmpty) { <td>
                         <a class="btn btn-default btn-sm" href="@revR(routes.HomeController.editBenchmark(b.id.get))" role="button">
                             <span class="glyphicon glyphicon-pencil"/>

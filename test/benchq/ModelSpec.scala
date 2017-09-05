@@ -29,7 +29,8 @@ class ModelSpec extends PlaySpec with BeforeAndAfterAll {
 
   val hotBetter =
     Benchmark("scala.tools.nsc.HotScalacBenchmark -p source=better-files",
-              Branch.sortedValues)(None)
+              Branch.sortedValues,
+              0)(None)
   val hotBetterNoForw = hotBetter.copy(
     command = hotBetter.command + " -p extraArgs=-Xmixin-force-forwarders:junit")(None)
 
@@ -88,7 +89,7 @@ class ModelSpec extends PlaySpec with BeforeAndAfterAll {
     }
 
     "delete Benchmark and their defaults" in {
-      val b = Benchmark("command", Branch.sortedValues)(None)
+      val b = Benchmark("command", Branch.sortedValues, 0)(None)
       val id = benchmarkService.getIdOrInsert(b)
 
       def queryDefault = toolDb.query(s"select * from defaultBenchmark where benchmarkId = $id")
