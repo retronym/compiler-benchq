@@ -5,7 +5,9 @@ import java.sql.Connection
 
 import anorm.SqlParser._
 import anorm._
+import benchq.git.GitRepo
 import benchq.model.Status._
+import play.api.Logger
 import play.api.db.Database
 
 // Longer-term, the tool could support tasks other than scalac benchmarks, like the
@@ -25,8 +27,29 @@ case class CompilerBenchmarkTask(priority: Int,
 
 class CompilerBenchmarkTaskService(database: Database,
                                    scalaVersionService: ScalaVersionService,
-                                   benchmarkService: BenchmarkService) {
+                                   benchmarkService: BenchmarkService,
+                                   lastExecutedBenchmarkService: LastExecutedBenchmarkService,
+                                   gitRepo: GitRepo,
+                                   config: Config) {
   def insert(task: CompilerBenchmarkTask): Long = database.withConnection { implicit conn =>
+    if (task.scalaVersion.repo == config.scalaScalaRepo) {
+      for (commitTime <- gitRepo.commitDateMillis(task.scalaVersion.sha)) {
+        for (branch <- gitRepo.branchesContaining(task.scalaVersion.sha, fetch = false).getOrElse(Nil);
+             benchmark <- task.benchmarks;
+             benchmarkId <- benchmark.id) {
+          lastExecutedBenchmarkService.findLast(benchmarkId, branch) match {
+            case Some(last) if last.commitTime >= commitTime =>
+              ()
+
+            case _ =>
+              val newLast =
+                LastExecutedBenchmark(benchmarkId, branch, task.scalaVersion.sha, commitTime)
+              Logger.info(s"Updating last execution $newLast")
+              lastExecutedBenchmarkService.updateOrInsert(newLast)
+          }
+        }
+      }
+    }
     val taskId = SQL"""
         insert into compilerBenchmarkTask (priority, status, scalaVersionId)
         values (
@@ -123,7 +146,7 @@ class CompilerBenchmarkTaskService(database: Database,
             priority = ${task.priority},
             status = ${task.status.name},
             scalaVersionId = $newScalaVersionId
-          where id = $id""".executeUpdate()
+            where id = $id""".executeUpdate()
 
       SQL"delete from compilerBenchmarkTaskBenchmark where compilerBenchmarkTaskId = $id"
         .executeUpdate()

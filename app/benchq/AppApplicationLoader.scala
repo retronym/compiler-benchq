@@ -89,6 +89,7 @@ class BenchQComponents(context: Context)
     wire[CompilerBenchmarkTaskService]
   lazy val benchmarkResultService: BenchmarkResultService = wire[BenchmarkResultService]
   lazy val knownRevisionService: KnownRevisionService = wire[KnownRevisionService]
+  lazy val lastExecutedBenchmarkService: LastExecutedBenchmarkService = wire[LastExecutedBenchmarkService]
 
   lazy val socialAuthController: SocialAuthController = wire[SocialAuthController]
   lazy val homeController: HomeController = wire[HomeController]

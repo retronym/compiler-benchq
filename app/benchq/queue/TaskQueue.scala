@@ -20,6 +20,7 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
                 resultsDb: ResultsDb,
                 knownRevisionService: KnownRevisionService,
                 benchmarkService: BenchmarkService,
+                lastExecutedBenchmarkService: LastExecutedBenchmarkService,
                 gitRepo: GitRepo,
                 system: ActorSystem,
                 config: Config) {
@@ -68,7 +69,11 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
 
         // If there are multiple tasks waiting for the same Scala version, only count one
         var numRunningScalaBuilds =
-          compilerBenchmarkTaskService.byIndex(Set(WaitForScalaBuild)).map(_.scalaVersion).distinct.size
+          compilerBenchmarkTaskService
+            .byIndex(Set(WaitForScalaBuild))
+            .map(_.scalaVersion)
+            .distinct
+            .size
         def canStartScalaBuild =
           numRunningScalaBuilds < config.scalaJenkins.maxConcurrentScalaBuilds
 
@@ -163,13 +168,38 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
   }
 
   object CheckNewCommitsActor {
+    import java.util.concurrent.TimeUnit.{MILLISECONDS => MS}
+
     case class Check(branch: Branch)
 
     val props = Props(new CheckNewCommitsActor)
+
+    private def shouldExecute(benchmark: Benchmark, branch: Branch, newCommitSha: String): Boolean =
+      benchmark.daily == 0 || {
+        lastExecutedBenchmarkService.findLast(benchmark.id.get, branch) match {
+          case Some(last) =>
+            gitRepo.commitDateMillis(newCommitSha, fetch = false) match {
+              case Some(newCommitTime) =>
+                val daysSince = MS.toDays(newCommitTime - last.commitTime)
+                Logger.info(
+                  s"Last execution for benchmark ${benchmark.id} was ${last.sha} at ${last.commitTime}, new commit $newCommitSha at $newCommitTime, $daysSince days between, daily is ${benchmark.daily}")
+                daysSince >= benchmark.daily
+
+              case _ =>
+                Logger.info(s"Could not get commit time for new commit $newCommitSha")
+                true
+            }
+
+          case _ =>
+            Logger.info(s"No last execution for benchmark ${benchmark.id} on $branch")
+            true
+        }
+      }
   }
 
   class CheckNewCommitsActor extends Actor {
     import CheckNewCommitsActor._
+
     def receive: Receive = {
       case Check(branch) =>
         knownRevisionService.lastKnownRevision(branch) match {
@@ -177,14 +207,19 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
             val newCommits = gitRepo.newMergeCommitsSince(knownRevision)
             Logger.info(s"Starting benchmarks for new commits in $branch: $newCommits")
             newCommits foreach { newCommit =>
-              val task =
-                CompilerBenchmarkTask(
-                  config.appConfig.defaultJobPriority,
-                  model.Status.CheckScalaVersionAvailable,
-                  ScalaVersion(config.scalaScalaRepo, newCommit, Nil)(None),
-                  benchmarkService.defaultBenchmarks(knownRevision.branch)
-                )(None)
-              compilerBenchmarkTaskService.insert(task)
+              val defaultBenchmarks = benchmarkService.defaultBenchmarks(branch)
+              val benchmarksToRun =
+                defaultBenchmarks.filter(b => shouldExecute(b, branch, newCommit))
+              if (benchmarksToRun.nonEmpty) {
+                val task =
+                  CompilerBenchmarkTask(
+                    config.appConfig.defaultJobPriority,
+                    model.Status.CheckScalaVersionAvailable,
+                    ScalaVersion(config.scalaScalaRepo, newCommit, Nil)(None),
+                    benchmarksToRun
+                  )(None)
+                compilerBenchmarkTaskService.insert(task)
+              }
             }
             if (newCommits.nonEmpty) {
               knownRevisionService.updateOrInsert(knownRevision.copy(revision = newCommits.head))
