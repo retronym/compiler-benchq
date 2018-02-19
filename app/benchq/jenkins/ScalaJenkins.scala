@@ -4,19 +4,20 @@ package jenkins
 import benchq.git.GitRepo
 import benchq.model._
 import benchq.repo.ScalaBuildsRepo
-import play.api.{Logger, http}
+import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.ws.{WSAuthScheme, WSClient}
 import play.api.mvc.Results
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
 
 class ScalaJenkins(ws: WSClient,
                    config: Config,
                    scalaBuildsRepo: ScalaBuildsRepo,
                    gitRepo: GitRepo) {
   import config.scalaJenkins._
+
+  private def isHttpSuccess(status: Int) = status >= 200 && status < 300
 
   object buildJobParams {
     // the build name (`displayName`) is defined in the job configuration in jenkins
@@ -54,9 +55,8 @@ class ScalaJenkins(ws: WSClient,
       .withQueryString(buildJobParams(task): _*)
       .post(Results.EmptyContent())
       .map {response =>
-        if (response.status != http.Status.OK) {
+        if (!isHttpSuccess(response.status))
           throw new JenkinsTriggerFailed(response.status, response.statusText, response.body)
-        }
         ()
       }
   }
@@ -85,9 +85,8 @@ class ScalaJenkins(ws: WSClient,
           .withQueryString(benchmarkJobParams(task, artifact): _*)
           .post(Results.EmptyContent())
           .map {response =>
-            if (response.status != http.Status.OK) {
+            if (!isHttpSuccess(response.status))
               throw new JenkinsTriggerFailed(response.status, response.statusText, response.body)
-            }
             ()
           }
       case None =>
