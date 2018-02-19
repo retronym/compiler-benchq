@@ -4,7 +4,7 @@ package jenkins
 import benchq.git.GitRepo
 import benchq.model._
 import benchq.repo.ScalaBuildsRepo
-import play.api.Logger
+import play.api.{Logger, http}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.libs.ws.{WSAuthScheme, WSClient}
 import play.api.mvc.Results
@@ -53,7 +53,12 @@ class ScalaJenkins(ws: WSClient,
       .withAuth(user, token, WSAuthScheme.BASIC)
       .withQueryString(buildJobParams(task): _*)
       .post(Results.EmptyContent())
-      .map(_ => ())
+      .map {response =>
+        if (response.status != http.Status.OK) {
+          throw new JenkinsTriggerFailed(response.status, response.statusText, response.body)
+        }
+        ()
+      }
   }
 
   object benchmarkJobParams {
@@ -79,11 +84,18 @@ class ScalaJenkins(ws: WSClient,
           .withAuth(user, token, WSAuthScheme.BASIC)
           .withQueryString(benchmarkJobParams(task, artifact): _*)
           .post(Results.EmptyContent())
-          .map(_ => ())
+          .map {response =>
+            if (response.status != http.Status.OK) {
+              throw new JenkinsTriggerFailed(response.status, response.statusText, response.body)
+            }
+            ()
+          }
       case None =>
         val msg = s"Could not start benchmark, no Scala build found for ${task.scalaVersion}"
         Logger.error(msg)
         throw new Exception(msg)
     }
   }
+
+  class JenkinsTriggerFailed(status: Int, statusString: String, reason: String) extends RuntimeException(s"$status / $statusString: $reason")
 }
