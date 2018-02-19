@@ -65,7 +65,7 @@ class CompilerBenchmarkTaskService(database: Database,
   private def insertStatusFields(taskId: Long, status: Status)(implicit conn: Connection): Unit = {
     status match {
       case RequestFailed(prev, msg) =>
-        SQL"insert into requestFailedFields values ($taskId, ${prev.name}, $msg)"
+        SQL"insert into requestFailedFields values ($taskId, ${prev.name}, ${msg.take(512)})"
           .executeInsert()
       case _ =>
     }
