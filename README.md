@@ -3,17 +3,30 @@ for every merge commit. The UI is at [scala-ci.typesafe.com/benchq](https://scal
 
 ## Admin
 
+Running on the "influxdb" EC2 node, which does not have a static IP or hostname. Add the following to your `.ssh/config` to tunnel through jenkins-master:
+
+```
+Host jenkins-master
+  HostName 54.67.111.226
+  User admin
+
+Host jenkins-grafana
+  HostName 172.31.0.100
+  User ubuntu
+  ProxyCommand ssh -q -W %h:%p jenkins-master
+```
+
 ### CLI
 
-Stop the service, log in as `ubuntu`:
+Stop the service, log in as `ubuntu` (the admin user):
 ```
-ssh ubuntu@ec2-52-53-208-5.us-west-1.compute.amazonaws.com
+ssh ubuntu@jenkins-grafana
 sudo sv down benchq
 ```
 
-Use the sbt console (todo: for some reason, I saw all debug-level logs in the console):
+Use the sbt console in the `benchq` user (todo: for some reason, I saw all debug-level logs in the console):
 ```
-ssh benchq@ec2-52-53-208-5.us-west-1.compute.amazonaws.com
+ssh benchq@jenkins-grafana
 cd compiler-benchq
 sbt -Dconfig.file=/home/benchq/benchq-data/conf/application.conf -Dlogger.file=/home/benchq/benchq-data/conf/logback.xml console
 
@@ -36,18 +49,18 @@ sql> quit
 
 Restart the service as `ubuntu`:
 ```
-ssh ubuntu@ec2-52-53-208-5.us-west-1.compute.amazonaws.com
+ssh ubuntu@jenkins-grafana
 sudo sv up benchq
 ```
 
 ### Deployment
 
-  * Running on `ssh benchq@ec2-52-53-208-5.us-west-1.compute.amazonaws.com`, port `8084`.
+  * Running on `ssh benchq@jenkins-grafana`, port `8084`.
   * Exposed via the [scala-ci reverse proxy](https://github.com/scala/scala-jenkins-infra/commit/0bd0525379ebb024cf34e13e1a5b9da59209e3f1)
 
 #### Sever admin
 
-`ssh ubuntu@ec2-52-53-208-5.us-west-1.compute.amazonaws.com`
+`ssh ubuntu@jenkins-grafana`
 
 Service by [runit](http://smarden.org/runit/), here's a [tutorial](http://kchard.github.io/runit-quickstart/).
 Script at `/etc/service/benchq/run` (uses a fat jar by [sbt-assembly](https://github.com/sbt/sbt-assembly)):
@@ -73,12 +86,12 @@ exec chpst -u benchq -U benchq \
     `git config receive.denyCurrentBranch updateInstead`
   * [`post-receive` script](https://github.com/scala/compiler-benchq/blob/master/scripts/post-receive)
     installed with `ln -s ../../scripts/post-receive .git/hooks/post-receive`
-  * Add `prod` remote to local checkout: `git remote add prod ssh://benchq@ec2-52-53-208-5.us-west-1.compute.amazonaws.com/home/benchq/compiler-benchq`
+  * Add `prod` remote to local checkout: `git remote add prod ssh://benchq@jenkins-grafana/home/benchq/compiler-benchq`
   * `git push prod master`
 
 #### Logs
 
 ```
-ssh benchq@ec2-52-53-208-5.us-west-1.compute.amazonaws.com
+ssh benchq@jenkins-grafana
 tail -n 100 -f /home/benchq/benchq-data/logs/application.log
 ```
