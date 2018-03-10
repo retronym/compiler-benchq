@@ -33,6 +33,7 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
     case class ScalaVersionAvailable(taskId: Long, artifactName: Try[Option[String]])
     case class ScalaBuildStarted(taskId: Long, res: Try[Unit])
     case class ScalaBuildFinished(taskId: Long, buildSucceeded: Try[Unit])
+    case class TravisBuildFinished(sha: String, res: Try[Unit])
     case class BenchmarkStarted(taskId: Long, res: Try[Unit])
     case class BenchmarkFinished(taskId: Long, results: Try[List[BenchmarkResult]])
     case class ResultsSent(taskId: Long, res: Try[Unit])
@@ -144,6 +145,25 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
             .foreach(task => updateStatus(task, StartBenchmark))
         }
         self ! PingQueue
+
+      case TravisBuildFinished(sha, tryRes) =>
+        val tasks = compilerBenchmarkTaskService
+          .byIndex(Set(WaitForScalaBuild))
+          .filter(t => t.scalaVersion.repo == config.scalaScalaRepo && t.scalaVersion.sha == sha)
+        tasks match {
+          case List(task) =>
+            tryRes match {
+              case Failure(e) =>
+                Logger.error(s"Action on task ${task.id} failed", e)
+                updateStatus(task, RequestFailed(task.status, e.getMessage))
+                self ! PingQueue
+              case Success(_) =>
+                self ! ScalaBuildFinished(task.id.get, tryRes)
+            }
+
+          case _ =>
+            Logger.info(s"No unique task for travis build ($sha): $tasks")
+        }
 
       case BenchmarkStarted(id, tryRes) =>
         // If the benchmark cannot be started, mark the task as RequestFailed. Otherwise wait for

@@ -78,4 +78,30 @@ class Webhooks(taskQueue: TaskQueue, config: Config) extends Controller {
         NotImplemented(s"Server does not handle notification: $name - $phase - $taskIdOpt")
     }
   }
+
+  def travis: Action[JsValue] = Action(parse.json) { implicit req =>
+    Logger.debug(s"Travis webhook request: ${req.body}")
+
+    req.headers.get("Travis-Repo-Slug") match {
+      case Some(config.scalaScalaRepo) =>
+        val buildUrl = (req.body \ "build_url").as[String]
+        val commit = (req.body \ "commit").as[String]
+        (req.body \ "status").asOpt[Int] match {
+          case Some(status) =>
+            val res =
+              if (status == 0) Success(())
+              else Failure(new Exception(s"Travis build failed: $buildUrl"))
+            taskQueue.queueActor ! taskQueue.QueueActor.TravisBuildFinished(commit, res)
+            Ok
+
+          case _ =>
+            Logger.info(s"Travis webhook: notification withouth 'status': $buildUrl")
+            NotImplemented
+        }
+
+      case repo =>
+        Logger.info(s"Travis webhook: not the scala repo: $repo")
+        NotImplemented
+    }
+  }
 }
