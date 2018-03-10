@@ -214,7 +214,7 @@ class TaskQueue(compilerBenchmarkTaskService: CompilerBenchmarkTaskService,
                 val task =
                   CompilerBenchmarkTask(
                     config.appConfig.defaultJobPriority,
-                    model.Status.CheckScalaVersionAvailable,
+                    model.Status.WaitForScalaBuild, // just wait for travis to build it
                     ScalaVersion(config.scalaScalaRepo, newCommit, Nil)(None),
                     benchmarksToRun
                   )(None)
