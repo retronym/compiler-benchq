@@ -3,7 +3,7 @@ package benchq
 import benchq.model.Branch
 import benchq.queue.TaskQueue
 import play.api.Logger
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 
 import scala.util.{Failure, Success, Try}
@@ -79,28 +79,36 @@ class Webhooks(taskQueue: TaskQueue, config: Config) extends Controller {
     }
   }
 
-  def travis: Action[JsValue] = Action(parse.json) { implicit req =>
+  def travis: Action[Map[String, Seq[String]]] = Action(parse.urlFormEncoded) { implicit req =>
     Logger.debug(s"Travis webhook request: ${req.body}")
 
-    req.headers.get("Travis-Repo-Slug") match {
-      case Some(config.scalaScalaRepo) =>
-        val buildUrl = (req.body \ "build_url").as[String]
-        val commit = (req.body \ "commit").as[String]
-        (req.body \ "status").asOpt[Int] match {
-          case Some(status) =>
-            val res =
-              if (status == 0) Success(())
-              else Failure(new Exception(s"Travis build failed: $buildUrl"))
-            taskQueue.queueActor ! taskQueue.QueueActor.TravisBuildFinished(commit, res)
-            Ok
+    req.body.get("payload") match {
+      case Some(Seq(data)) =>
+        req.headers.get("Travis-Repo-Slug") match {
+          case Some(config.scalaScalaRepo) =>
+            val json = Json.parse(data)
+            val buildUrl = (json \ "build_url").as[String]
+            val commit = (json \ "commit").as[String]
+            (json \ "status").asOpt[Int] match {
+              case Some(status) =>
+                val res =
+                  if (status == 0) Success(())
+                  else Failure(new Exception(s"Travis build failed: $buildUrl"))
+                taskQueue.queueActor ! taskQueue.QueueActor.TravisBuildFinished(commit, res)
+                Ok
 
-          case _ =>
-            Logger.info(s"Travis webhook: notification withouth 'status': $buildUrl")
+              case _ =>
+                Logger.info(s"Travis webhook: notification withouth 'status': $buildUrl")
+                NotImplemented
+            }
+
+          case repo =>
+            Logger.info(s"Travis webhook: not the scala repo: $repo")
             NotImplemented
         }
 
-      case repo =>
-        Logger.info(s"Travis webhook: not the scala repo: $repo")
+      case data =>
+        Logger.info(s"Unexpected payload: $data")
         NotImplemented
     }
   }
