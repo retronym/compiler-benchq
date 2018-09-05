@@ -24,7 +24,7 @@ class ScalaBuildsRepo(ws: WSClient, config: Config, gitRepo: GitRepo) {
   def searchQuery(scalaVersion: ScalaVersion, prValidationSnapshot: Boolean = false) =
     s"""items.find({
        |  "repo":"${if (prValidationSnapshot) "scala-pr-validation-snapshots" else repoFor(scalaVersion)}",
-       |  "name":{"$$match":"scala-compiler*${scalaVersion.sha.take(7)}${if (prValidationSnapshot) "-SNAPSHOT" else ""}.jar"}
+       |  "name":{"$$match":"scala-compiler*${scalaVersion.sha.take(7)}${if (prValidationSnapshot) "-*" else ""}.jar"}
        |})
      """.stripMargin
 
