@@ -21,10 +21,13 @@ class ScalaBuildsRepo(ws: WSClient, config: Config, gitRepo: GitRepo) {
 
   // $match expressions don't support regular expressions, just * and ?
   // https://www.jfrog.com/confluence/display/RTF/Artifactory+Query+Language
+  // pr validation snapshots: the version is like `2.12.7-bin-e46c4ba-SNAPSHOT`, but the artifact names
+  // like `scala-compiler-2.12.7-bin-e46c4ba-20180829.070226-1.jar`. it seems they always end in `-1`. we
+  // match on `-1.jar` to avoid finding `-1-sources.jar`.
   def searchQuery(scalaVersion: ScalaVersion, prValidationSnapshot: Boolean = false) =
     s"""items.find({
        |  "repo":"${if (prValidationSnapshot) "scala-pr-validation-snapshots" else repoFor(scalaVersion)}",
-       |  "name":{"$$match":"scala-compiler*${scalaVersion.sha.take(7)}${if (prValidationSnapshot) "-*" else ""}.jar"}
+       |  "name":{"$$match":"scala-compiler*${scalaVersion.sha.take(7)}${if (prValidationSnapshot) "-*-1" else ""}.jar"}
        |})
      """.stripMargin
 
